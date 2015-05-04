@@ -64,44 +64,8 @@ void FeatureExtractor::conv(vector<Array2D> &res, Array2D &prevMap, Array2D &sum
             for (int i = 0; i < layerEdge; ++i) {
                 for (int j = 0; j < layerEdge; ++j) {
                     maximator.add(i, j, sumMap.at(i, j));
-                    /*double maximum = SIZES::MIN_VAL;
-                    int maxK;
-                    int maxT; 
-                    
-                    for (int k = -COMP_EDGE; k <= COMP_EDGE; ++k) {
-                        if (k + i < 0 || k + i >= layerEdge) {
-                            continue;
-                        }
-                        int localHeight = COMP_EDGE - abs(k);
-                        for (int t = -localHeight; t <= localHeight; ++t) {
-                            if (t + j < 0 || t + j >= layerEdge) {
-                                continue;
-                            }
-                            if (maximum < sumMap.at(i + k, j + t)) {
-                                maximum = sumMap.at(i + k, j + t);
-                                maxK = k;
-                                maxT = t;
-                            }
-                        }
-                    } 
-                    isLocalMax.set(i + maxK, j + maxT, 1);*/
                 }
             }
-            /*for (int i = 0; i < layerEdge; ++i) {
-                for (int j = 0; j < layerEdge; ++j) {
-                    if (isLocalMax.at(i, j) == 0) {
-                        continue;
-                    }
-                    for (int k = 0; k < convEdge; ++k) {
-                        for (int t = 0; t < convEdge; ++t) {
-                            double x = prevMap.at(i + k, j + t);
-                            double w = weight.at(k, t);
-                            double delta = learningSpeed * (x - w);
-                            weight.add(k, t, delta);
-                        }
-                    }
-                }
-            }*/
             for (int i = 0; i < maximator.size(); ++i) {
                 int maxX;
                 int maxY;
