@@ -56,17 +56,29 @@ FeatureExtractor::Array2D::Array2D(Mat &mat,
 }
 
 void FeatureExtractor::Array2D::normalize() {
-    // Does like this or width*height
-    int len = getWidth() * getHeight();
+    // Does like this or getWidth() * getHeight()
+    int len = width * height;
     double sum = 0;
     for (int i = 0; i < len; ++i) {
         sum += data[i] * data[i];
     }
     sum += bias * bias;
+    assert(sum >= 0);
     double scale = sqrt(sum);
     if (scale == 0) {
         return;
     }
+
+    //Normalize: sum = items_count / 50;
+    double normalizeValue;
+    if (bias == 0) {
+        normalizeValue = len + 1;
+    } else {
+        normalizeValue = len;
+    }
+    normalizeValue /= 50;
+
+    scale /= sqrt(normalizeValue);
     for (int i = 0; i < len; ++i) {
         data[i] /= scale;
     }

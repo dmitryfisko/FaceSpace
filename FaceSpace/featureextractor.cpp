@@ -169,7 +169,7 @@ void FeatureExtractor::train(TrainMode MODE) {
     }
     isExtractorTrain = true;
 
-    int maxTrainSetSize = 300;
+    int maxTrainSetSize = 20000;
     trainEpoch = 1;
 
     vector<string> images = NetworkUtils::loadTrainSet();

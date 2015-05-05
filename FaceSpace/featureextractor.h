@@ -27,7 +27,7 @@ private:
         static const int CONV_LAYERS = 5;
         static const int CONV_LAST_LAYER_NUM = CONV_LAYERS - 1;
         static const int COMPETITIVE_FIELD_EDGE[5];
-        static const int COMPETITIVE_WINNERS = 3;
+        static const int COMPETITIVE_WINNERS = 5;
         static const double MIN_VAL;
     };
 
