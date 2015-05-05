@@ -11,10 +11,10 @@ const int FeatureExtractor::LAYER_TYPE[10] =  { LAYER_INPUT,
                                                LAYER_CONV, LAYER_POOL, 
                                                LAYER_NEIRON };
 const int FeatureExtractor::SIZES::LAYER_EDGE[10] = { 174, 168, 84, 80, 40, 36, 18, 14, 7, 1 };
-const int FeatureExtractor::SIZES::LAYER_MAPS[10] = { 1, 64, 64, 256, 256, 512, 512, 1024, 1024, 1024};
+const int FeatureExtractor::SIZES::LAYER_MAPS[10] = { 1, 8, 8, 64, 64, 256, 256, 1024, 1024, 1024};
 const int FeatureExtractor::SIZES::CONV_MAPS[5] = { 64, 4, 2, 2, 1 };
 const int FeatureExtractor::SIZES::CONV_EDGE[5] = { 7, 5, 5, 5, 7 };
-const int FeatureExtractor::SIZES::COMPETITIVE_FIELD_EDGE[5] = { 10, 8, 6, 4, 1 };
+const int FeatureExtractor::SIZES::COMPETITIVE_WINNERS[5] = { 3, 3, 3, 3, 3 };
 const double FeatureExtractor::SIZES::MIN_VAL = -1e9;
 
 FeatureExtractor::FeatureExtractor() {
@@ -29,7 +29,7 @@ FeatureExtractor::FeatureExtractor() {
 }
 
 double FeatureExtractor::activation(double sum) {
-    return tanh(sum);
+    //return tanh(sum);
 }
 
 void FeatureExtractor::conv(vector<Array2D> &res, Array2D &prevMap, Array2D &sumMap,
@@ -61,12 +61,13 @@ void FeatureExtractor::conv(vector<Array2D> &res, Array2D &prevMap, Array2D &sum
 
         if (isExtractorTrain) {
             maximator.clear();
+            convMap.clear();
             for (int i = 0; i < layerEdge; ++i) {
                 for (int j = 0; j < layerEdge; ++j) {
                     maximator.add(i, j, sumMap.at(i, j));
                 }
             }
-            for (int i = 0; i < maximator.size(); ++i) {
+            for (int i = maximator.size() - 1; i >= 0; --i) {
                 int maxX;
                 int maxY;
                 maximator.getXY(i, maxX, maxY);
@@ -78,6 +79,7 @@ void FeatureExtractor::conv(vector<Array2D> &res, Array2D &prevMap, Array2D &sum
                         weight.add(k, t, delta);
                     }
                 }
+                convMap.set(maxX, maxY, 1);
             }
 
             weight.normalize();
@@ -119,7 +121,6 @@ vector<double> FeatureExtractor::getVector(Mat &image) {
     resize(mat, mat, Size(SIZES::LAYER_EDGE[0], SIZES::LAYER_EDGE[0]));
 
     Array2D inputArr(mat, isExtractorTrain);
-    Maximator maximator;
     int convNum = 0;
     mapsLayers[0].clear();
     mapsLayers[0].push_back(inputArr);
@@ -130,6 +131,7 @@ vector<double> FeatureExtractor::getVector(Mat &image) {
         
         if (LAYER_TYPE[layer] == LAYER_CONV ||
                 LAYER_TYPE[layer] == LAYER_NEIRON) {
+            Maximator maximator(SIZES::COMPETITIVE_WINNERS[convNum]);
             Array2D sumMap(layerEdge, layerEdge);
             int mapNum = 0;
             for (int map = 0; map < layerMaps; ++map) {
@@ -165,11 +167,12 @@ vector<double> FeatureExtractor::getVector(Mat &image) {
 void FeatureExtractor::train(TrainMode MODE) {
     if (MODE == TrainMode::New) {
         remove("weights.dat");
+        //memory leak
         weights = *(new Weights());
     }
     isExtractorTrain = true;
 
-    int maxTrainSetSize = 20000;
+    int maxTrainSetSize = 100;
     trainEpoch = 1;
 
     vector<string> images = NetworkUtils::loadTrainSet();

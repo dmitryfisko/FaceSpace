@@ -11,7 +11,6 @@ using namespace cv;
 
 class FeatureExtractor {
 private:
-        
     static const int LAYER_INPUT = 0;
     static const int LAYER_CONV = 1;
     static const int LAYER_POOL = 2;
@@ -26,8 +25,7 @@ private:
         static const int CONV_EDGE[5];
         static const int CONV_LAYERS = 5;
         static const int CONV_LAST_LAYER_NUM = CONV_LAYERS - 1;
-        static const int COMPETITIVE_FIELD_EDGE[5];
-        static const int COMPETITIVE_WINNERS = 5;
+        static const int COMPETITIVE_WINNERS[5];
         static const double MIN_VAL;
     };
 
@@ -42,11 +40,12 @@ private:
         };
 
         Item *items;
+        const int limit;
         int counter;
 
         inline void push(Item &temp);
     public:
-        Maximator();
+        Maximator(int limit);
         ~Maximator();
 
         void add(int x, int y, double val);
@@ -69,6 +68,7 @@ private:
         ~Array2D();
 
         void normalize();
+        void clear();
         int getWidth();
         int getHeight();
         double getBias();
@@ -103,7 +103,7 @@ private:
     bool isExtractorTrain = false;
     bool isVisualize = false;
     int trainEpoch = 1;
-    double baseLearningSpeed = 0.05;
+    double baseLearningSpeed = 0.1;
 
     vector<Array2D> mapsLayers[SIZES::LAYERS_COUNT];
     Weights weights;
@@ -113,7 +113,6 @@ private:
               Maximator &maximator,
               int layerNum, int &mapNum, int convNum);
     void pool(Array2D &poolMap, Array2D &prevMap, int layerNum);
-
 public:
     FeatureExtractor();
 

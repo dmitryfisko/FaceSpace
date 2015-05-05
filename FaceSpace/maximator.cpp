@@ -1,8 +1,8 @@
 #include "featureextractor.h"
 
-FeatureExtractor::Maximator::Maximator() {
+FeatureExtractor::Maximator::Maximator(int limit) : limit(limit) {
     assert(SIZES::COMPETITIVE_WINNERS > 0);
-    items = new Item[SIZES::COMPETITIVE_WINNERS];
+    items = new Item[limit];
     counter = 0;
 }
 
@@ -20,7 +20,7 @@ void FeatureExtractor::Maximator::push(Item &first) {
 }
 
 void FeatureExtractor::Maximator::add(int x, int y, double val) {
-    if (counter < SIZES::COMPETITIVE_WINNERS) {
+    if (counter < limit) {
         for (int i = counter; i >= 1; --i) {
             items[i] = items[i - 1];
         }

@@ -16,7 +16,7 @@ FeatureExtractor::Array2D::Array2D(int width,
 
     bias = 0;
     for (int i = 0; i < len; ++i) {
-            *(data + i) = 0;
+        *(data + i) = 0;
     }
 }
 
@@ -83,6 +83,14 @@ void FeatureExtractor::Array2D::normalize() {
         data[i] /= scale;
     }
     bias /= scale;
+}
+
+void FeatureExtractor::Array2D::clear() {
+    int len = width * height;
+    bias = 0;
+    for (int i = 0; i < len; ++i) {
+        *(data + i) = 0;
+    }
 }
 
 int FeatureExtractor::Array2D::getWidth() {
