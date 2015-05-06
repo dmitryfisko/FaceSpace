@@ -11,23 +11,23 @@ using namespace cv;
 
 class FeatureExtractor {
 private:
+    struct SIZES {
+        static const int LAYERS_COUNT = 8;
+        static const int LAYER_EDGE[LAYERS_COUNT];
+        static const int LAYER_MAPS[LAYERS_COUNT];
+        static const int CONV_LAYERS = 4;
+        static const int CONV_MAPS[CONV_LAYERS];
+        static const int CONV_EDGE[CONV_LAYERS];
+        static const int CONV_LAST_LAYER_NUM = CONV_LAYERS - 1;
+        static const int COMPETITIVE_WINNERS[CONV_LAYERS];
+        static const double MIN_VAL;
+    };
+
     static const int LAYER_INPUT = 0;
     static const int LAYER_CONV = 1;
     static const int LAYER_POOL = 2;
     static const int LAYER_NEIRON = 3;
-    static const int LAYER_TYPE[10];
-
-    struct SIZES {
-        static const int LAYER_EDGE[10];
-        static const int LAYER_MAPS[10];
-        static const int LAYERS_COUNT = 10;
-        static const int CONV_MAPS[5];
-        static const int CONV_EDGE[5];
-        static const int CONV_LAYERS = 5;
-        static const int CONV_LAST_LAYER_NUM = CONV_LAYERS - 1;
-        static const int COMPETITIVE_WINNERS[5];
-        static const double MIN_VAL;
-    };
+    static const int LAYER_TYPE[SIZES::LAYERS_COUNT];
 
     class Maximator {
     private:
@@ -109,8 +109,7 @@ private:
     Weights weights;
 
     inline double activation(double impulse);
-    void conv(vector<Array2D> &res, Array2D &prevMap, Array2D &sumMap,
-              Maximator &maximator,
+    void conv(vector<Array2D> &res, Array2D &prevMap, 
               int layerNum, int &mapNum, int convNum);
     void pool(Array2D &poolMap, Array2D &prevMap, int layerNum);
 public:

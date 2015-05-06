@@ -3,14 +3,11 @@
 #include <codecvt>
 #include <iostream>
 #include <vector>
-#include <windows.h>
 #include <fstream>
 
 #include "imageminer.h"
-#include "facedetector.h"
 #include "networkutils.h"
 
-#include "rapidjson/document.h"
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
 
@@ -26,22 +23,67 @@ string ImageMiner::int64ToString(__int64 val) {
         div *= 10;
     }
     while (div) {
-        s += (char)('0' + val / div);
+        s += (char) ('0' + val / div);
         val %= div;
         div /= 10;
     }
 
     return s;
 }
+
+int ImageMiner::loadUserPhotos(string userID, 
+                                Document::AllocatorType &allocator,
+                                FaceDetector &faceDetector) {
+    string response = NetworkUtils::requestUserPhotos(userID);
+    Document document;
+    document.Parse(response.c_str());
+    Value &photos = document["response"];
+
+    int len = photos.Size();
+    int recognized = 0;
+    for (int i = 0; i < len; ++i) {
+        Value photo(kObjectType);
+        photo.CopyFrom(photos[i], allocator);
+
+        if (!photo.HasMember("src_big")) {
+            continue;
+        }
+
+        string hqImageUrl = photo["src_big"].GetString();
+        string hqImagePath = NetworkUtils::getHQImagePath(userID + "_" + int64ToString(i + 1) + "_hq");
+
+        if (!NetworkUtils::isFileExist(hqImagePath)) {
+            NetworkUtils::downloadImageAndCache(hqImageUrl, hqImagePath);
+        }
+        Mat hqImage = imread(hqImagePath, CV_LOAD_IMAGE_UNCHANGED);
+        remove(hqImagePath.c_str());
+        if (hqImage.empty()) {
+            continue;
+        }
+
+        vector<Rect> faces = faceDetector.
+            detectEyes(hqImage, FaceDetector::DetectMode::FindAllFaces);
+        if (faces.size() != 1) {
+            continue;
+        }
+
+        Mat faceMat = hqImage(faces[0]);
+        imwrite(NetworkUtils::getHQFacePath(userID, int64ToString(i + 1)).c_str(),
+                faceMat);
+        ++recognized;
+    }
+
+    return recognized;
+}
+
 void ImageMiner::mine() {
     Document data;
     data.SetArray();
-    Document::AllocatorType& allocator = data.GetAllocator();
+    Document::AllocatorType &allocator = data.GetAllocator();
     int curID = START_ID;
-    size_t prevRequestTime = 0;
-    FaceDetector face_detector;
+    FaceDetector faceDetector;
 
-    size_t now = clock();
+    size_t startTime = clock();
     int bigImagesDownloaded = 0;
     while (curID <= END_ID) {
         string userIDs;
@@ -52,66 +94,46 @@ void ImageMiner::mine() {
                 userIDs += ',';
             }
         }
-
-        size_t timeDif = clock() - prevRequestTime;
-        if (timeDif < TIME_BEETWEEN_REQUESTS) {
-            Sleep(TIME_BEETWEEN_REQUESTS - timeDif);
-
-        }
+        
         if (idsInRequest != 0) {
-            prevRequestTime = clock();
-            string response = NetworkUtils::requestUsersData(userIDs);
+            string response = NetworkUtils::requestProfilesData(userIDs);
             cout << response.length() << endl;
 
             Document document;
 
             document.Parse(response.c_str());
-            Value& s = document["response"];
+            Value &profiles = document["response"];
 
-            int len = s.Size();
+            int len = profiles.Size();
             for (int i = 0; i < len; ++i) {
-                Value obj(kObjectType);
-                obj.CopyFrom(s[i], allocator);
+                Value profile(kObjectType);
+                profile.CopyFrom(profiles[i], allocator);
 
-                string userID = int64ToString(obj["uid"].GetInt64());
-                string lqImageUrl = obj["photo_max"].GetString();
+                string userID = int64ToString(profile["uid"].GetInt64());
+                string lqImageUrl = profile["photo_max"].GetString();
                 string lqImagePath = NetworkUtils::getLQFacePath(userID + "_lq");
                 NetworkUtils::downloadImageAndCache(lqImageUrl, lqImagePath);
 
                 Mat lqImage = imread(lqImagePath, CV_LOAD_IMAGE_UNCHANGED);
                 if (!lqImage.empty()) {
-                    vector<Rect> lqFaces = face_detector.
+                    vector<Rect> lqFaces = faceDetector.
                         detectEyes(lqImage, FaceDetector::DetectMode::CheckHasFace);
                     if (lqFaces.size() > 0) {
-                        string hqImageUrl = obj["photo_max_orig"].GetString();
-                        string hqImagePath = NetworkUtils::getHQImagePath(userID + "_hq");
-
-                        if (!NetworkUtils::isFileExist(hqImagePath)) {
-                            NetworkUtils::downloadImageAndCache(hqImageUrl, hqImagePath);
+                        int recognizedUserPhotos =
+                            loadUserPhotos(userID, allocator, faceDetector);
+                        if (recognizedUserPhotos > 0) {
+                            cout << "   " << userID << endl;
+                            ++bigImagesDownloaded;
                         }
-
-                        Mat hqImage = imread(hqImagePath, CV_LOAD_IMAGE_UNCHANGED);
-                        if (!hqImage.empty()) {
-                            vector<Rect> faces = face_detector.
-                                detectEyes(hqImage, FaceDetector::DetectMode::FindAllFaces);
-                            for (int j = 0; j < faces.size(); ++j) {
-                                Mat faceMat = hqImage(faces[j]);
-                                imwrite(NetworkUtils::getHQFacePath(
-                                    userID + "_face_hq_" + int64ToString(j + 1)).c_str(),
-                                    faceMat);
-                            }
-                        }
-
-                        ++bigImagesDownloaded;
                     }
                 }
                 remove(lqImagePath.c_str());
 
-                data.PushBack(obj, allocator);
+                data.PushBack(profile, allocator);
             }
         }
     }
-    cout << bigImagesDownloaded << " " << clock() - now << endl;
+    cout << bigImagesDownloaded << " " << clock() - startTime << endl;
 
     StringBuffer buffer;
     Writer<StringBuffer> writer(buffer);

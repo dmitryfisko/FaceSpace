@@ -1,23 +1,25 @@
 #include "networkutils.h"
 #include <dirent.h>
+#include <direct.h>
 #include <assert.h>
 #include <string>
 #include <curl/curl.h>
 #include <io.h>
 
-string NetworkUtils::MINE_LQ_FACES_FOLDER_PATH = "d:\\X\\FaceSpace\\Datasets\\faces_lq\\";
-string NetworkUtils::MINE_HQ_FACES_FOLDER_PATH = "d:\\X\\FaceSpace\\Datasets\\faces_hq\\";
-string NetworkUtils::MINE_LQ_IMAGES_FOLDER_PATH = MINE_LQ_FACES_FOLDER_PATH;
-string NetworkUtils::MINE_HQ_IMAGES_FOLDER_PATH = MINE_LQ_FACES_FOLDER_PATH;
-string NetworkUtils::VISUALIZER_FOLDER_PATH = "d:\\X\\FaceSpace\\Datasets\\visualizer\\";
-string NetworkUtils::TRAIN_FOLDER_PATH = MINE_HQ_FACES_FOLDER_PATH;
-string NetworkUtils::TEST_LFW_FOLDER_PATH = "d:\\X\\FaceSpace\\Datasets\\lfw\\";
+const string NetworkUtils::MINE_LQ_FACES_FOLDER_PATH = "d:\\X\\FaceSpace\\Datasets\\imageminer\\faces_all\\";
+const string NetworkUtils::MINE_HQ_FACES_FOLDER_PATH = "d:\\X\\FaceSpace\\Datasets\\imageminer\\faces_hq\\";
+const string NetworkUtils::MINE_LQ_IMAGES_FOLDER_PATH = MINE_LQ_FACES_FOLDER_PATH;
+const string NetworkUtils::MINE_HQ_IMAGES_FOLDER_PATH = MINE_LQ_FACES_FOLDER_PATH;
+const string NetworkUtils::VISUALIZER_FOLDER_PATH = "d:\\X\\FaceSpace\\Datasets\\visualizer\\";
+const string NetworkUtils::TRAIN_MAINER_FOLDER_PATH = MINE_HQ_FACES_FOLDER_PATH;
+const string NetworkUtils::TEST_LFW_FOLDER_PATH = "d:\\X\\FaceSpace\\Datasets\\lfw\\";
+size_t NetworkUtils::prevRequestTime = 0;
 
-vector<string> NetworkUtils::loadTrainSet() {
+vector<string> NetworkUtils::loadTrainSetMiner() {
     vector<string> images;
     
     struct dirent *ent;
-    DIR *dir = opendir(TRAIN_FOLDER_PATH.c_str());
+    DIR *dir = opendir(TRAIN_MAINER_FOLDER_PATH.c_str());
     assert(dir != NULL);
 
     while ((ent = readdir(dir)) != NULL) {
@@ -27,7 +29,7 @@ vector<string> NetworkUtils::loadTrainSet() {
             continue;
         }
 
-        string image_path = TRAIN_FOLDER_PATH + ent->d_name;
+        string image_path = TRAIN_MAINER_FOLDER_PATH + ent->d_name;
         if (image_path.find("_face_hq_") != string::npos) {
             images.push_back(image_path);
         }
@@ -37,6 +39,45 @@ vector<string> NetworkUtils::loadTrainSet() {
 
     return images;
 }
+
+/*vector< vector<string> > NetworkUtils::loadTrainSetCFW() {
+    vector< vector<string> > trainSet;
+
+    struct dirent *ent;
+    DIR *dir = opendir(TRAIN_CFW_FOLDER_PATH.c_str());
+    assert(dir != NULL);
+
+    while ((ent = readdir(dir)) != NULL) {
+        if (strcmp(ent->d_name, ".") == 0 ||
+            strcmp(ent->d_name, "..") == 0 ||
+            ent->d_type != DT_DIR) {
+            continue;
+        }
+
+        string humanName = ent->d_name;
+        string humanFolder = TRAIN_CFW_FOLDER_PATH + humanName + '\\';
+
+        DIR *innerDir = opendir(humanFolder.c_str());
+        struct dirent *innerEnt;
+
+        while ((innerEnt = readdir(innerDir)) != NULL) {
+            if (strcmp(innerEnt->d_name, ".") == 0 ||
+                strcmp(innerEnt->d_name, "..") == 0 ||
+                innerEnt->d_type == DT_DIR) {
+                continue;
+            }
+
+            string imagePath = humanFolder + innerEnt->d_name;
+            trainSet[humanName].push_back(imagePath);
+        }
+
+        closedir(innerDir);
+    }
+
+    closedir(dir);
+
+    return trainSet;
+}*/
 
 map<string, vector<string>> NetworkUtils::loadTestSetLFW() {
     map<string, vector<string>> trainSet;
@@ -93,7 +134,7 @@ void NetworkUtils::initString(struct ResponseHolder *s) {
 
 size_t NetworkUtils::writeFuncMem(void *ptr, size_t size, size_t nmemb, struct ResponseHolder *s) {
     size_t new_len = s->len + size*nmemb;
-    s->ptr = (char*)realloc(s->ptr, new_len + 1);
+    s->ptr = (char*) realloc(s->ptr, new_len + 1);
     if (s->ptr == NULL) {
         fprintf(stderr, "realloc() failed\n");
         exit(EXIT_FAILURE);
@@ -110,13 +151,18 @@ size_t NetworkUtils::writeFuncFile(void *ptr, size_t size, size_t nmemb, FILE *s
     return written;
 }
 
-string NetworkUtils::requestUsersData(string ids) {
+string NetworkUtils::loadUrl(string &url) {
+    size_t timeDif = clock() - prevRequestTime;
+    if (timeDif < TIME_BEETWEEN_REQUESTS) {
+        Sleep(TIME_BEETWEEN_REQUESTS - timeDif);
+    }
+    prevRequestTime = clock();
+
     CURL *curl = curl_easy_init();
     string data = "";
 
     if (curl) {
         CURLcode res;
-        string url = "http://api.vk.com/method/users.get?user_ids=" + ids + "&fields=photo_max,photo_max_orig";
 
         struct ResponseHolder response;
         initString(&response);
@@ -144,12 +190,24 @@ string NetworkUtils::requestUsersData(string ids) {
     return data;
 }
 
+string NetworkUtils::requestProfilesData(string ids) {
+    string url = "http://api.vk.com/method/users.get?user_ids=" + ids + "&fields=photo_max,photo_max_orig";
+    return loadUrl(url);
+}
+
+string NetworkUtils::requestUserPhotos(string id) {
+    string url = "http://api.vk.com/method/photos.get?owner_id=" + id + "&album_id=profile&rev=1&extended=0&count=40&version=4.30";
+    return loadUrl(url);
+}
+
 string NetworkUtils::getLQFacePath(string fileName) {
     return MINE_LQ_FACES_FOLDER_PATH + fileName + ".jpg";
 }
 
-string NetworkUtils::getHQFacePath(string fileName) {
-    return MINE_HQ_FACES_FOLDER_PATH + fileName + ".jpg";
+string NetworkUtils::getHQFacePath(string userID, string faceNum) {
+    const string USER_FACES_FOLDER = MINE_HQ_FACES_FOLDER_PATH + userID + '\\';
+    _mkdir(USER_FACES_FOLDER.c_str());
+    return USER_FACES_FOLDER + "face_" + faceNum + ".jpg";
 }
 
 string NetworkUtils::getLQImagePath(string fileName) {

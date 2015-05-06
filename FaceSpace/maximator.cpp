@@ -38,7 +38,7 @@ int FeatureExtractor::Maximator::size() {
 }
 
 void FeatureExtractor::Maximator::getXY(int index, int &x, int &y) {
-    assert(0 <= index && index <= SIZES::COMPETITIVE_WINNERS);
+    assert(0 <= index && index <= counter);
     x = items[index].x;
     y = items[index].y;
 }
