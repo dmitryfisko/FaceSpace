@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "classifier.h"
 
 const double Classifier::MAX_DIST = 1e9;

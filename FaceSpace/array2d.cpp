@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "featureextractor.h"
 
 FeatureExtractor::Array2D::Array2D(const Array2D &prev) {

@@ -1,11 +1,10 @@
+#include "stdafx.h"
 #include "tests.h"
 #include "featureextractor.h"
 #include "classifier.h"
 #include "networkutils.h"
 
-
 #include <fstream>
-
 
 void Tests::normalizeImage(Mat &mat) {
     resize(mat, mat, Size(174, 174));

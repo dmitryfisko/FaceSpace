@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "networkutils.h"
 #include <dirent.h>
 #include <direct.h>

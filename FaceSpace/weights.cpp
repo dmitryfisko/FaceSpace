@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "featureextractor.h"
 
 #include <fstream>
