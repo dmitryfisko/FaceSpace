@@ -22,6 +22,9 @@
     <Filter Include="Файлы исходного кода\miner">
       <UniqueIdentifier>{b36e9cc4-bc0e-429a-b9fe-0ed362d5bc3c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Файлы исходного кода\ui">
+      <UniqueIdentifier>{4b0dc05f-8452-421b-b7b4-3118dfe2447d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -50,6 +53,15 @@
     </ClInclude>
     <ClInclude Include="tests.h">
       <Filter>Заголовочные файлы</Filter>
+    </ClInclude>
+    <ClInclude Include="webcam.h">
+      <Filter>Заголовочные файлы</Filter>
+    </ClInclude>
+    <ClInclude Include="Верхний колонтитул.h">
+      <Filter>Файлы исходного кода</Filter>
+    </ClInclude>
+    <ClInclude Include="Верхний колонтитул2.h">
+      <Filter>Файлы исходного кода</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -85,6 +97,9 @@
     </ClCompile>
     <ClCompile Include="weights.cpp">
       <Filter>Файлы исходного кода\extractor</Filter>
+    </ClCompile>
+    <ClCompile Include="webcam.cpp">
+      <Filter>Файлы исходного кода\ui</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

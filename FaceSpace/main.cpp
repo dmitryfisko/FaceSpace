@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "resource.h"
+#include "webcam.h"
 
 #define MAX_LOADSTRING 100
 
@@ -10,6 +11,7 @@
 HINSTANCE hInst;								// текущий экземпляр
 TCHAR szTitle[MAX_LOADSTRING];					// Текст строки заголовка
 TCHAR szWindowClass[MAX_LOADSTRING];			// имя класса главного окна
+WebCam webcam;
 
 // Отправить объявления функций, включенных в этот модуль кода:
 ATOM				MyRegisterClass(HINSTANCE hInstance);
@@ -28,6 +30,7 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
  	// TODO: разместите код здесь.
 	MSG msg;
 	HACCEL hAccelTable;
+    webcam.start();
 
 	// Инициализация глобальных строк
 	LoadString(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
@@ -35,18 +38,15 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 	MyRegisterClass(hInstance);
 
 	// Выполнить инициализацию приложения:
-	if (!InitInstance (hInstance, nCmdShow))
-	{
+	if (!InitInstance (hInstance, nCmdShow)) {
 		return FALSE;
 	}
 
 	hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_FACESPACE));
 
 	// Цикл основного сообщения:
-	while (GetMessage(&msg, NULL, 0, 0))
-	{
-		if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
-		{
+	while (GetMessage(&msg, NULL, 0, 0)) {
+		if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))	{
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
@@ -113,6 +113,53 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    return TRUE;
 }
 
+void displayWebCamFrame(HDC &hWinDC) {
+    HBITMAP hBitmap = webcam.getBitmap();
+    // Verify that the image was loaded
+    if (hBitmap == NULL) {
+        ::MessageBox(NULL, __T("LoadImage Failed"), __T("Error"), MB_OK);
+        return;
+    }
+
+    // Create a device context that is compatible with the window
+    HDC hLocalDC;
+    hLocalDC = ::CreateCompatibleDC(hWinDC);
+    // Verify that the device context was created
+    if (hLocalDC == NULL) {
+        ::MessageBox(NULL, __T("CreateCompatibleDC Failed"), __T("Error"), MB_OK);
+        return;
+    }
+
+    // Get the bitmap's parameters and verify the get
+    BITMAP qBitmap;
+    int iReturn = GetObject(reinterpret_cast<HGDIOBJ>(hBitmap), sizeof(BITMAP),
+                            reinterpret_cast<LPVOID>(&qBitmap));
+    if (!iReturn) {
+        ::MessageBox(NULL, __T("GetObject Failed"), __T("Error"), MB_OK);
+        return;
+    }
+
+    // Select the loaded bitmap into the device context
+    HBITMAP hOldBmp = (HBITMAP)::SelectObject(hLocalDC, hBitmap);
+    if (hOldBmp == NULL) {
+        ::MessageBox(NULL, __T("SelectObject Failed"), __T("Error"), MB_OK);
+        return;
+    }
+
+    // Blit the dc which holds the bitmap onto the window's dc
+    BOOL qRetBlit = ::BitBlt(hWinDC, 0, 0, qBitmap.bmWidth, qBitmap.bmHeight,
+                             hLocalDC, 0, 0, SRCCOPY);
+    if (!qRetBlit) {
+        ::MessageBox(NULL, __T("Blit Failed"), __T("Error"), MB_OK);
+        return;
+    }
+
+    // Unitialize and deallocate resources
+    ::SelectObject(hLocalDC, hOldBmp);
+    ::DeleteDC(hLocalDC);
+    ::DeleteObject(hBitmap);
+}
+
 //
 //  ФУНКЦИЯ: WndProc(HWND, UINT, WPARAM, LPARAM)
 //
@@ -149,7 +196,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 	case WM_PAINT:
 		hdc = BeginPaint(hWnd, &ps);
-		// TODO: добавьте любой код отрисовки...
+        //displayWebCamFrame(hdc);
 		EndPaint(hWnd, &ps);
 		break;
 	case WM_DESTROY:
