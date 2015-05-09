@@ -43,11 +43,6 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 
 	hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_FACESPACE));
 
-    /*CvCapture *capture = cvCaptureFromCAM(0);
-    Mat mat = cvQueryFrame(capture);
-    imshow("sfd", mat);
-    cvWaitKey(5000);*/
-
     webcam.start();
     // Цикл основного сообщения:
 	while (GetMessage(&msg, NULL, 0, 0)) {
