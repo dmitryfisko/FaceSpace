@@ -55,11 +55,8 @@ void CLIBridge::CaptureReader::task(Object^ sender, DoWorkEventArgs^ e) {
         Mat image = frame;
         if (!image.empty()) {
             IplImage2Bmp(frame, bitmap);
-            cvWaitKey(50);
             InvalidateRect(GetActiveWindow(), NULL, TRUE);
-            //RedrawWindow(GetActiveWindow(), &rc, NULL, RDW_NOERASE | RDW_INVALIDATE | RDW_UPDATENOW);
-            //InvalidateRect(GetActiveWindow(), NULL, true);
-            //UpdateWindow(GetActiveWindow());
+            System::Threading::Thread::Sleep(100);
         } 
     }
     cvReleaseImage(&frame);

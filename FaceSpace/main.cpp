@@ -12,6 +12,7 @@ HINSTANCE hInst;								// текущий экземпляр
 TCHAR szTitle[MAX_LOADSTRING];					// Текст строки заголовка
 TCHAR szWindowClass[MAX_LOADSTRING];			// имя класса главного окна
 WebCam webcam;
+HWND hWndPictureBox;
 
 // Отправить объявления функций, включенных в этот модуль кода:
 ATOM				MyRegisterClass(HINSTANCE hInstance);
@@ -200,7 +201,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	switch (message)
 	{
 	case WM_COMMAND:
-		wmId    = LOWORD(wParam);
+		wmId = LOWORD(wParam);
 		wmEvent = HIWORD(wParam);
 		// Разобрать выбор в меню:
 		switch (wmId)
@@ -215,16 +216,23 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			return DefWindowProc(hWnd, message, wParam, lParam);
 		}
 		break;
+    case WM_CREATE:
+        hWndPictureBox = CreateWindowEx(0,
+                                             L"Static",
+                                             L"Picture Box",
+                                             WS_CHILD | WS_VISIBLE | SS_BITMAP,
+                                             10, 10, 100, 100,
+                                             hWnd,
+                                             (HMENU)10001, // control ID
+                                             GetModuleHandle(NULL),
+                                             NULL);
+        break;
 	case WM_PAINT:
 		hdc = BeginPaint(hWnd, &ps);
-        displayWebCamFrame(hdc);
+        //displayWebCamFrame(hdc);
+        SendMessage(hWndPictureBox, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)webcam.getBitmap());
 		EndPaint(hWnd, &ps);
 		break;
-    case 127:
-        //hdc = BeginPaint(hWnd, &ps);
-        //displayWebCamFrame(hdc);
-        //EndPaint(hWnd, &ps);
-        break;
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;
