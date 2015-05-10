@@ -54,48 +54,58 @@ void CLIBridge::CaptureReader::task(Object^ sender, DoWorkEventArgs^ e) {
         frame = cvQueryFrame(capture);
         Mat image = frame;
         if (!image.empty()) {
-            //bitmap = iplImage2DIB(frame);
-            imshow("sdf", image);
-            cvWaitKey(10);
+            IplImage2Bmp(frame, bitmap);
+            cvWaitKey(50);
+            InvalidateRect(GetActiveWindow(), NULL, TRUE);
+            //RedrawWindow(GetActiveWindow(), &rc, NULL, RDW_NOERASE | RDW_INVALIDATE | RDW_UPDATENOW);
+            //InvalidateRect(GetActiveWindow(), NULL, true);
+            //UpdateWindow(GetActiveWindow());
         } 
     }
     cvReleaseImage(&frame);
     e->Cancel = true;
 }
 
-HBITMAP CLIBridge::CaptureReader::iplImage2DIB(const IplImage* Image) {
-    int bpp = Image->nChannels * 8;
-    assert(Image->width >= 0 && Image->height >= 0 &&
-           (bpp == 8 || bpp == 24 || bpp == 32));
-    CvMat dst;
-    void* dst_ptr = 0;
-    HBITMAP hbmp = NULL;
-    unsigned char buffer[sizeof(BITMAPINFO) + 255 * sizeof(RGBQUAD)];
-    BITMAPINFO* bmi = (BITMAPINFO*)buffer;
-    BITMAPINFOHEADER* bmih = &(bmi->bmiHeader);
+bool CLIBridge::CaptureReader::IplImage2Bmp(IplImage *pImage, HBITMAP &hBitmap) {
+    if (pImage && pImage->depth == IPL_DEPTH_8U) {
+        uchar buffer[sizeof(BITMAPINFOHEADER) + 1024];
+        BITMAPINFO* bmi = (BITMAPINFO*) buffer;
+        int bmp_w = pImage->width, bmp_h = pImage->height;
 
-    ZeroMemory(bmih, sizeof(BITMAPINFOHEADER));
-    bmih->biSize = sizeof(BITMAPINFOHEADER);
-    bmih->biWidth = Image->width;
-    bmih->biHeight = Image->origin ? abs(Image->height) : -abs(Image->height);
-    bmih->biPlanes = 1;
-    bmih->biBitCount = bpp;
-    bmih->biCompression = BI_RGB;
+        int width = bmp_w;
+        int height = bmp_h;
+        int bpp = pImage ? (pImage->depth & 255)*pImage->nChannels : 0;
+        int origin = pImage->origin;
 
-    if (bpp == 8) {
-        RGBQUAD* palette = bmi->bmiColors;
-        int i;
-        for (i = 0; i < 256; i++) {
-            palette[i].rgbRed = palette[i].rgbGreen = palette[i].rgbBlue
-                = (BYTE) i;
-            palette[i].rgbReserved = 0;
+        assert(bmi && width >= 0 && height >= 0 && (bpp == 8 || bpp == 24 || bpp == 32));
+
+        BITMAPINFOHEADER* bmih = &(bmi->bmiHeader);
+
+        memset(bmih, 0, sizeof(*bmih));
+        bmih->biSize = sizeof(BITMAPINFOHEADER);
+        bmih->biWidth = width;
+        bmih->biHeight = origin ? abs(height) : -abs(height);
+        bmih->biPlanes = 1;
+        bmih->biBitCount = (unsigned short) bpp;
+        bmih->biCompression = BI_RGB;
+
+        if (bpp == 8) {
+            RGBQUAD* palette = bmi->bmiColors;
+            for (int i = 0; i < 256; i++) {
+                palette[i].rgbBlue = palette[i].rgbGreen = palette[i].rgbRed = (BYTE) i;
+                palette[i].rgbReserved = 0;
+            }
         }
+        if (bpp == 24) {
+            ((DWORD*)bmi->bmiColors)[0] = 0x00FF0000; 
+            ((DWORD*)bmi->bmiColors)[1] = 0x0000FF00;
+            ((DWORD*)bmi->bmiColors)[2] = 0x000000FF;
+        }
+
+        HDC hdc = ::GetDC(NULL);;
+        hBitmap = CreateDIBitmap(hdc, bmih, CBM_INIT, pImage->imageData, bmi, DIB_RGB_COLORS);
+        ::ReleaseDC(NULL, hdc);
+        return true;
     }
-
-    hbmp = CreateDIBSection(NULL, bmi, DIB_RGB_COLORS, &dst_ptr, 0, 0);
-    cvInitMatHeader(&dst, Image->height, Image->width, CV_8UC3,
-                    dst_ptr, (Image->width * Image->nChannels + 3) & -4);
-    cvConvertImage(Image, &dst, Image->origin ? CV_CVTIMG_FLIP : 0);
-
-    return hbmp;
+    return false;
 }

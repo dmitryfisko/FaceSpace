@@ -54,13 +54,13 @@
     <ClInclude Include="tests.h">
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
-    <ClInclude Include="webcam.h">
-      <Filter>Заголовочные файлы</Filter>
-    </ClInclude>
     <ClInclude Include="Верхний колонтитул.h">
       <Filter>Файлы исходного кода</Filter>
     </ClInclude>
     <ClInclude Include="Верхний колонтитул2.h">
+      <Filter>Файлы исходного кода</Filter>
+    </ClInclude>
+    <ClInclude Include="webcam.h">
       <Filter>Файлы исходного кода</Filter>
     </ClInclude>
   </ItemGroup>
@@ -114,11 +114,6 @@
     <Image Include="FaceSpace.ico">
       <Filter>Файлы ресурсов</Filter>
     </Image>
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="mainform.resx">
-      <Filter>Файлы ресурсов</Filter>
-    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <None Include="weights.dat" />

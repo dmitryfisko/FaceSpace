@@ -21,7 +21,8 @@ namespace CLIBridge {
         BackgroundWorker^ reader;
 
         void task(Object^ sender, DoWorkEventArgs^ e);
-        static HBITMAP iplImage2DIB(const IplImage* Image);
+        //static HBITMAP iplImage2DIB(const IplImage* Image);
+        static bool IplImage2Bmp(IplImage *pImage, HBITMAP &hBitmap);
     public:
         CaptureReader();
         ~CaptureReader();

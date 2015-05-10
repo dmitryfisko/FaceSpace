@@ -115,52 +115,69 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    return TRUE;
 }
 
-//void displayWebCamFrame(HDC &hWinDC) {
-//    HBITMAP hBitmap = webcam.getBitmap();
-//    // Verify that the image was loaded
-//    if (hBitmap == NULL) {
-//        ::MessageBox(NULL, __T("LoadImage Failed"), __T("Error"), MB_OK);
-//        return;
-//    }
-//
-//    // Create a device context that is compatible with the window
-//    HDC hLocalDC;
-//    hLocalDC = ::CreateCompatibleDC(hWinDC);
-//    // Verify that the device context was created
-//    if (hLocalDC == NULL) {
-//        ::MessageBox(NULL, __T("CreateCompatibleDC Failed"), __T("Error"), MB_OK);
-//        return;
-//    }
-//
-//    // Get the bitmap's parameters and verify the get
-//    BITMAP qBitmap;
-//    int iReturn = GetObject(reinterpret_cast<HGDIOBJ>(hBitmap), sizeof(BITMAP),
-//                            reinterpret_cast<LPVOID>(&qBitmap));
-//    if (!iReturn) {
-//        ::MessageBox(NULL, __T("GetObject Failed"), __T("Error"), MB_OK);
-//        return;
-//    }
-//
-//    // Select the loaded bitmap into the device context
-//    HBITMAP hOldBmp = (HBITMAP)::SelectObject(hLocalDC, hBitmap);
-//    if (hOldBmp == NULL) {
-//        ::MessageBox(NULL, __T("SelectObject Failed"), __T("Error"), MB_OK);
-//        return;
-//    }
-//
-//    // Blit the dc which holds the bitmap onto the window's dc
-//    BOOL qRetBlit = ::BitBlt(hWinDC, 0, 0, qBitmap.bmWidth, qBitmap.bmHeight,
-//                             hLocalDC, 0, 0, SRCCOPY);
-//    if (!qRetBlit) {
-//        ::MessageBox(NULL, __T("Blit Failed"), __T("Error"), MB_OK);
-//        return;
-//    }
-//
-//    // Unitialize and deallocate resources
-//    ::SelectObject(hLocalDC, hOldBmp);
-//    ::DeleteDC(hLocalDC);
-//    ::DeleteObject(hBitmap);
-//}
+void displayWebCamFrame(HDC &hdc) {
+    HBITMAP hBitmap;
+    BITMAP bitmap;
+    HDC hdcMem;
+    HGDIOBJ oldBitmap;
+    hBitmap = webcam.getBitmap();
+    if (hBitmap != NULL) {
+        hdcMem = CreateCompatibleDC(hdc);
+        oldBitmap = SelectObject(hdcMem, hBitmap);
+
+        GetObject(hBitmap, sizeof(bitmap), &bitmap);
+        BitBlt(hdc, 0, 0, bitmap.bmWidth, bitmap.bmHeight, hdcMem, 0, 0, SRCCOPY);
+
+        SelectObject(hdcMem, oldBitmap);
+        DeleteDC(hdcMem);
+    }
+}
+
+/*void displayWebCamFrame(HDC &hWinDC) {
+    HBITMAP hBitmap = webcam.getBitmap();
+    // Verify that the image was loaded
+    if (hBitmap == NULL) {
+        //::MessageBox(NULL, __T("LoadImage Failed"), __T("Error"), MB_OK);
+        return;
+    }
+
+    // Create a device context that is compatible with the window
+    HDC hLocalDC = CreateCompatibleDC(hWinDC);
+    // Verify that the device context was created
+    if (hLocalDC == NULL) {
+        MessageBox(NULL, __T("CreateCompatibleDC Failed"), __T("Error"), MB_OK);
+        return;
+    }
+
+    // Get the bitmap's parameters and verify the get
+    BITMAP qBitmap;
+    int iReturn = GetObject(reinterpret_cast<HGDIOBJ>(hBitmap), sizeof(BITMAP),
+                            reinterpret_cast<LPVOID>(&qBitmap));
+    if (!iReturn) {
+        MessageBox(NULL, __T("GetObject Failed"), __T("Error"), MB_OK);
+        return;
+    }
+
+    // Select the loaded bitmap into the device context
+    HBITMAP hOldBmp = (HBITMAP)::SelectObject(hLocalDC, hBitmap);
+    if (hOldBmp == NULL) {
+        ::MessageBox(NULL, __T("SelectObject Failed"), __T("Error"), MB_OK);
+        return;
+    }
+
+    // Blit the dc which holds the bitmap onto the window's dc
+    BOOL qRetBlit = ::BitBlt(hWinDC, 0, 0, qBitmap.bmWidth, qBitmap.bmHeight,
+                             hLocalDC, 0, 0, SRCCOPY);
+    if (!qRetBlit) {
+        ::MessageBox(NULL, __T("Blit Failed"), __T("Error"), MB_OK);
+        return;
+    }
+
+    // Unitialize and deallocate resources
+    ::SelectObject(hLocalDC, hOldBmp);
+    ::DeleteDC(hLocalDC);
+    ::DeleteObject(hBitmap);
+}*/
 
 //
 //  ‘”Õ ÷»ﬂ: WndProc(HWND, UINT, WPARAM, LPARAM)
@@ -200,13 +217,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 	case WM_PAINT:
 		hdc = BeginPaint(hWnd, &ps);
-        //displayWebCamFrame(hdc);
-        /*capture = cvCaptureFromCAM(0);
-        mat = cvQueryFrame(capture);
-        imshow("adfsf", mat);
-        cvWaitKey(500);*/
+        displayWebCamFrame(hdc);
 		EndPaint(hWnd, &ps);
 		break;
+    case 127:
+        //hdc = BeginPaint(hWnd, &ps);
+        //displayWebCamFrame(hdc);
+        //EndPaint(hWnd, &ps);
+        break;
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;
