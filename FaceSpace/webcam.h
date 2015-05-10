@@ -12,10 +12,6 @@ namespace CLIBridge {
     extern CvCapture *capture;
     extern HBITMAP bitmap;
 
-    static Mat getImage(string path) {
-        return imread(path.c_str(), -1);
-    }
-
     ref class CaptureReader {
     private:
         BackgroundWorker^ reader;
@@ -35,12 +31,11 @@ namespace CLIBridge {
 class WebCam {
 private:
     gcroot<CLIBridge::CaptureReader^> reader;
-
 public:
     WebCam();
     ~WebCam();
 
-    HBITMAP getBitmap();
+    static HBITMAP getBitmap();
     void start();
     void stop();
 };

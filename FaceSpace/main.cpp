@@ -142,27 +142,62 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 void displayWebCamFrame(HDC &hdc) {
     HBITMAP hBitmap;
     hBitmap = webcam.getBitmap();
-    if (hBitmap != NULL) {
-        BITMAP bitmap;
-        HDC hdcMem;
-        HGDIOBJ oldBitmap;
-    
-        hdcMem = CreateCompatibleDC(hdc);
-        oldBitmap = SelectObject(hdcMem, hBitmap);
-
-        GetObject(hBitmap, sizeof(bitmap), &bitmap);
-        BitBlt(hdc, 0, 0, bitmap.bmWidth, bitmap.bmHeight, hdcMem, 0, 0, SRCCOPY);
-
-        SelectObject(hdcMem, oldBitmap);
-        DeleteDC(hdcMem);
-
-        RECT rect;
-        if (GetWindowRect(GetActiveWindow(), &rect)) {
-            int width = rect.right - rect.left;
-            int height = rect.bottom - rect.top;
-        }
+    if (hBitmap == NULL) {
+        return;
     }
+    BITMAP bitmap;
+    HDC hdcMem;
+    HGDIOBJ oldBitmap;
+    RECT rect;
+    
+    hdcMem = CreateCompatibleDC(hdc);
+    oldBitmap = SelectObject(hdcMem, hBitmap);
+
+    GetObject(hBitmap, sizeof(bitmap), &bitmap);
+    int bWidth = bitmap.bmWidth;
+    int bHeight = bitmap.bmHeight;
+
+
+    
+    if (GetClientRect(GetActiveWindow(), &rect)) {
+        int dX;
+        int dY;
+        int dWidth;
+        int dHeight;
+
+        int wWidth = rect.right - rect.left;
+        int wHeight = rect.bottom - rect.top;
+
+        double wRatio = (double) wWidth / wHeight;
+        double bRatio = (double) bWidth / bHeight;
+        if (bRatio < wRatio) {
+            dHeight = wHeight;
+            dWidth = dHeight * bRatio;
+        } else {
+            dWidth = wWidth;
+            dHeight = dWidth / bRatio;
+        }
+
+        dX = (wWidth - dWidth + 1) / 2;
+        dY = (wHeight - dHeight + 1) / 2;
+
+        if (!dX || !dY) {
+            HBRUSH brush = CreateSolidBrush(RGB(255, 87, 34));
+            FillRect(hdc, &rect, brush);
+            DeleteObject(brush);
+        }
+        
+        
+        SetStretchBltMode(hdc, COLORONCOLOR);
+        StretchBlt(hdc, dX, dY, dWidth, dHeight, hdcMem, 0, 0, bitmap.bmWidth, bitmap.bmHeight, SRCCOPY);
+
+        //BitBlt(hdc, 0, 0, bitmap.bmWidth, bitmap.bmHeight, hdcMem, 0, 0, SRCCOPY);
+    }
+
+    SelectObject(hdcMem, oldBitmap);
+    DeleteDC(hdcMem);
 }
+
 
 /*void displayWebCamFrame(HDC &hWinDC) {
     HBITMAP hBitmap = webcam.getBitmap();
