@@ -23,8 +23,8 @@ void WebCam::start() {
 }
 
 void WebCam::stop() {
-    reader->stop();
     cvReleaseCapture(&CLIBridge::capture);
+    reader->stop();
 }
 
 HBITMAP WebCam::getBitmap() {
@@ -55,8 +55,8 @@ void CLIBridge::CaptureReader::task(Object^ sender, DoWorkEventArgs^ e) {
         Mat image = frame;
         if (!image.empty()) {
             IplImage2Bmp(frame, bitmap);
-            InvalidateRect(GetActiveWindow(), NULL, TRUE);
-            System::Threading::Thread::Sleep(100);
+            InvalidateRect(GetActiveWindow(), NULL, false);
+            System::Threading::Thread::Sleep(30);
         } 
     }
     cvReleaseImage(&frame);

@@ -12,7 +12,6 @@ HINSTANCE hInst;								// текущий экземпляр
 TCHAR szTitle[MAX_LOADSTRING];					// Текст строки заголовка
 TCHAR szWindowClass[MAX_LOADSTRING];			// имя класса главного окна
 WebCam webcam;
-HWND hWndPictureBox;
 
 // Отправить объявления функций, включенных в этот модуль кода:
 ATOM				MyRegisterClass(HINSTANCE hInstance);
@@ -70,7 +69,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 
 	wcex.cbSize = sizeof(WNDCLASSEX);
 
-	wcex.style			= CS_HREDRAW | CS_VREDRAW;
+    wcex.style          = 0; //CS_HREDRAW | CS_VREDRAW;
 	wcex.lpfnWndProc	= WndProc;
 	wcex.cbClsExtra		= 0;
 	wcex.cbWndExtra		= 0;
@@ -109,20 +108,45 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
       return FALSE;
    }
 
-
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
 
    return TRUE;
 }
 
+/*void displayWebCamFrame(HDC &hdc) {
+    HDC          hdcMem;
+    HBITMAP      hbmMem;
+    BITMAP bitmap;
+    HANDLE       hOld;
+
+    PAINTSTRUCT  ps;
+    HDC          hdc;
+    
+    hdcMem = CreateCompatibleDC(hdc);
+    hbmMem = CreateCompatibleBitmap(hdc, win_width, win_height);
+    hOld = SelectObject(hdcMem, hbmMem);
+
+    // Здесь рисуем в hdcMem
+     = (HBITMAP)::SelectObject(hdcMem, webcam.getBitmap());
+
+    // Выводим построенное  изображение и памяти на экран
+    BitBlt(hdc, 0, 0, win_width, win_height, hdcMem, 0, 0, SRCCOPY);
+
+    // Освобождаем память
+    SelectObject(hdcMem, hOld);
+    DeleteObject(hbmMem);
+    DeleteDC(hdcMem);
+}*/
+
 void displayWebCamFrame(HDC &hdc) {
     HBITMAP hBitmap;
-    BITMAP bitmap;
-    HDC hdcMem;
-    HGDIOBJ oldBitmap;
     hBitmap = webcam.getBitmap();
     if (hBitmap != NULL) {
+        BITMAP bitmap;
+        HDC hdcMem;
+        HGDIOBJ oldBitmap;
+    
         hdcMem = CreateCompatibleDC(hdc);
         oldBitmap = SelectObject(hdcMem, hBitmap);
 
@@ -131,6 +155,12 @@ void displayWebCamFrame(HDC &hdc) {
 
         SelectObject(hdcMem, oldBitmap);
         DeleteDC(hdcMem);
+
+        RECT rect;
+        if (GetWindowRect(GetActiveWindow(), &rect)) {
+            int width = rect.right - rect.left;
+            int height = rect.bottom - rect.top;
+        }
     }
 }
 
@@ -138,7 +168,6 @@ void displayWebCamFrame(HDC &hdc) {
     HBITMAP hBitmap = webcam.getBitmap();
     // Verify that the image was loaded
     if (hBitmap == NULL) {
-        //::MessageBox(NULL, __T("LoadImage Failed"), __T("Error"), MB_OK);
         return;
     }
 
@@ -216,21 +245,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			return DefWindowProc(hWnd, message, wParam, lParam);
 		}
 		break;
-    case WM_CREATE:
-        hWndPictureBox = CreateWindowEx(0,
-                                             L"Static",
-                                             L"Picture Box",
-                                             WS_CHILD | WS_VISIBLE | SS_BITMAP,
-                                             10, 10, 100, 100,
-                                             hWnd,
-                                             (HMENU)10001, // control ID
-                                             GetModuleHandle(NULL),
-                                             NULL);
-        break;
+    case WM_ERASEBKGND:
+        return 1;
 	case WM_PAINT:
 		hdc = BeginPaint(hWnd, &ps);
-        //displayWebCamFrame(hdc);
-        SendMessage(hWndPictureBox, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)webcam.getBitmap());
+        displayWebCamFrame(hdc);
 		EndPaint(hWnd, &ps);
 		break;
 	case WM_DESTROY:
