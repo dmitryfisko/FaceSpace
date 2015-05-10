@@ -12,6 +12,9 @@ HINSTANCE hInst;								// текущий экземпляр
 TCHAR szTitle[MAX_LOADSTRING];					// Текст строки заголовка
 TCHAR szWindowClass[MAX_LOADSTRING];			// имя класса главного окна
 WebCam webcam;
+HDC memHDC;
+HDC memHDC2;
+HGDIOBJ memBitmap2;
 
 // Отправить объявления функций, включенных в этот модуль кода:
 ATOM				MyRegisterClass(HINSTANCE hInstance);
@@ -76,7 +79,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 	wcex.hInstance		= hInstance;
 	wcex.hIcon			= LoadIcon(hInstance, MAKEINTRESOURCE(IDI_FACESPACE));
 	wcex.hCursor		= LoadCursor(NULL, IDC_ARROW);
-	wcex.hbrBackground	= (HBRUSH)(COLOR_WINDOW+1);
+    wcex.hbrBackground =  NULL;
 	wcex.lpszMenuName	= MAKEINTRESOURCE(IDC_FACESPACE);
 	wcex.lpszClassName	= szWindowClass;
 	wcex.hIconSm		= LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
@@ -146,18 +149,15 @@ void displayWebCamFrame(HDC &hdc) {
         return;
     }
     BITMAP bitmap;
-    HDC hdcMem;
     HGDIOBJ oldBitmap;
+    HGDIOBJ oldBitmap2;
     RECT rect;
     
-    hdcMem = CreateCompatibleDC(hdc);
-    oldBitmap = SelectObject(hdcMem, hBitmap);
+    oldBitmap = SelectObject(memHDC, hBitmap);
 
     GetObject(hBitmap, sizeof(bitmap), &bitmap);
     int bWidth = bitmap.bmWidth;
     int bHeight = bitmap.bmHeight;
-
-
     
     if (GetClientRect(GetActiveWindow(), &rect)) {
         int dX;
@@ -167,6 +167,8 @@ void displayWebCamFrame(HDC &hdc) {
 
         int wWidth = rect.right - rect.left;
         int wHeight = rect.bottom - rect.top;
+
+        oldBitmap2 = SelectObject(memHDC2, memBitmap2);
 
         double wRatio = (double) wWidth / wHeight;
         double bRatio = (double) bWidth / bHeight;
@@ -182,67 +184,23 @@ void displayWebCamFrame(HDC &hdc) {
         dY = (wHeight - dHeight + 1) / 2;
 
         if (!dX || !dY) {
-            HBRUSH brush = CreateSolidBrush(RGB(255, 87, 34));
-            FillRect(hdc, &rect, brush);
+            //HBRUSH brush = CreateSolidBrush(RGB(139, 195, 74)); //green
+            HBRUSH brush = CreateSolidBrush(RGB(63, 81, 181)); //dark blue
+            FillRect(memHDC2, &rect, brush);
             DeleteObject(brush);
         }
         
+        SetStretchBltMode(memHDC, COLORONCOLOR);
+        StretchBlt(memHDC2, dX, dY, dWidth, dHeight, 
+                   memHDC, 0, 0, bitmap.bmWidth, bitmap.bmHeight, SRCCOPY);
+
+        BitBlt(hdc, 0, 0, wWidth, wHeight, memHDC2, 0, 0, SRCCOPY);
         
-        SetStretchBltMode(hdc, COLORONCOLOR);
-        StretchBlt(hdc, dX, dY, dWidth, dHeight, hdcMem, 0, 0, bitmap.bmWidth, bitmap.bmHeight, SRCCOPY);
-
-        //BitBlt(hdc, 0, 0, bitmap.bmWidth, bitmap.bmHeight, hdcMem, 0, 0, SRCCOPY);
+        SelectObject(memHDC2, oldBitmap2);
     }
 
-    SelectObject(hdcMem, oldBitmap);
-    DeleteDC(hdcMem);
+    SelectObject(memHDC, oldBitmap);
 }
-
-
-/*void displayWebCamFrame(HDC &hWinDC) {
-    HBITMAP hBitmap = webcam.getBitmap();
-    // Verify that the image was loaded
-    if (hBitmap == NULL) {
-        return;
-    }
-
-    // Create a device context that is compatible with the window
-    HDC hLocalDC = CreateCompatibleDC(hWinDC);
-    // Verify that the device context was created
-    if (hLocalDC == NULL) {
-        MessageBox(NULL, __T("CreateCompatibleDC Failed"), __T("Error"), MB_OK);
-        return;
-    }
-
-    // Get the bitmap's parameters and verify the get
-    BITMAP qBitmap;
-    int iReturn = GetObject(reinterpret_cast<HGDIOBJ>(hBitmap), sizeof(BITMAP),
-                            reinterpret_cast<LPVOID>(&qBitmap));
-    if (!iReturn) {
-        MessageBox(NULL, __T("GetObject Failed"), __T("Error"), MB_OK);
-        return;
-    }
-
-    // Select the loaded bitmap into the device context
-    HBITMAP hOldBmp = (HBITMAP)::SelectObject(hLocalDC, hBitmap);
-    if (hOldBmp == NULL) {
-        ::MessageBox(NULL, __T("SelectObject Failed"), __T("Error"), MB_OK);
-        return;
-    }
-
-    // Blit the dc which holds the bitmap onto the window's dc
-    BOOL qRetBlit = ::BitBlt(hWinDC, 0, 0, qBitmap.bmWidth, qBitmap.bmHeight,
-                             hLocalDC, 0, 0, SRCCOPY);
-    if (!qRetBlit) {
-        ::MessageBox(NULL, __T("Blit Failed"), __T("Error"), MB_OK);
-        return;
-    }
-
-    // Unitialize and deallocate resources
-    ::SelectObject(hLocalDC, hOldBmp);
-    ::DeleteDC(hLocalDC);
-    ::DeleteObject(hBitmap);
-}*/
 
 //
 //  ФУНКЦИЯ: WndProc(HWND, UINT, WPARAM, LPARAM)
@@ -259,6 +217,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	int wmId, wmEvent;
 	PAINTSTRUCT ps;
 	HDC hdc;
+    int wWidth;
+    int wHeight;
 
     //Mat mat;
     //CvCapture *capture;
@@ -285,9 +245,22 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_PAINT:
 		hdc = BeginPaint(hWnd, &ps);
         displayWebCamFrame(hdc);
-		EndPaint(hWnd, &ps);
 		break;
+    case WM_SIZE:
+        hdc = BeginPaint(hWnd, &ps);
+        memHDC = CreateCompatibleDC(hdc);
+        memHDC2 = CreateCompatibleDC(hdc);
+        
+        RECT rect;
+        GetClientRect(GetActiveWindow(), &rect);
+        wWidth = rect.right - rect.left;
+        wHeight = rect.bottom - rect.top;
+        memBitmap2 = ::CreateCompatibleBitmap(hdc, wWidth, wHeight);
+        EndPaint(hWnd, &ps);
+        break;
 	case WM_DESTROY:
+        DeleteDC(memHDC2);
+        DeleteDC(memHDC);
 		PostQuitMessage(0);
 		break;
 	default:

@@ -105,6 +105,7 @@
     <ClInclude Include="webcam.h" />
     <ClInclude Include="Верхний колонтитул.h" />
     <ClInclude Include="Верхний колонтитул2.h" />
+    <ClInclude Include="Верхний колонтитул3.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="array2d.cpp" />
