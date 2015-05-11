@@ -28,5 +28,5 @@ public:
     const enum DetectMode { CheckHasFace, FindAllFaces };
 
     FaceDetector();
-    vector<Rect> detectEyes(Mat& originalFrame, DetectMode MODE);
+    vector<Rect> detect(Mat& originalFrame, DetectMode MODE);
 };

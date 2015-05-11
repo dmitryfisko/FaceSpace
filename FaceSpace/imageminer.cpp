@@ -63,7 +63,7 @@ int ImageMiner::loadUserPhotos(string userID,
         }
 
         vector<Rect> faces = faceDetector.
-            detectEyes(hqImage, FaceDetector::DetectMode::FindAllFaces);
+            detect(hqImage, FaceDetector::DetectMode::FindAllFaces);
         if (faces.size() != 1) {
             continue;
         }
@@ -118,7 +118,7 @@ void ImageMiner::mine() {
                 Mat lqImage = imread(lqImagePath, CV_LOAD_IMAGE_UNCHANGED);
                 if (!lqImage.empty()) {
                     vector<Rect> lqFaces = faceDetector.
-                        detectEyes(lqImage, FaceDetector::DetectMode::CheckHasFace);
+                        detect(lqImage, FaceDetector::DetectMode::CheckHasFace);
                     if (lqFaces.size() > 0) {
                         int recognizedUserPhotos =
                             loadUserPhotos(userID, allocator, faceDetector);

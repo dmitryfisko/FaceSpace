@@ -60,9 +60,9 @@ void CLIBridge::CaptureReader::stop() {
 void CLIBridge::CaptureReader::task(Object^ sender, DoWorkEventArgs^ e) {
     CLIBridge::capture = cvCaptureFromCAM(0);
     for (; !reader->CancellationPending;) {
-        frame = cvQueryFrame(capture);
-        Mat image = frame;
-        if (!image.empty()) {
+        IplImage *tempFrame = cvQueryFrame(capture);
+        if (tempFrame && (tempFrame->height > 0 && tempFrame->width > 0)) {
+            frame = tempFrame;
             IplImage2Bmp(frame, bitmap);
             HWND hwnd = GetActiveWindow();
             RECT rect;

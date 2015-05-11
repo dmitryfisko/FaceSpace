@@ -72,7 +72,7 @@ Rect FaceDetector::scaleRect(Rect &rect, double scale, int width, int height) {
 }
 
 
-vector<Rect> FaceDetector::detectEyes(Mat &image, DetectMode MODE) {
+vector<Rect> FaceDetector::detect(Mat &image, DetectMode MODE) {
     Mat frameGray;
     vector<Rect> faces;
     vector<Rect> checkedFaces;
