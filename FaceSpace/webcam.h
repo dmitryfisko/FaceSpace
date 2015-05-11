@@ -31,11 +31,13 @@ namespace CLIBridge {
 class WebCam {
 private:
     gcroot<CLIBridge::CaptureReader^> reader;
+    bool isRun = false;
 public:
     WebCam();
     ~WebCam();
 
     static HBITMAP getBitmap();
+    bool isRunning();
     void start();
     void stop();
 };

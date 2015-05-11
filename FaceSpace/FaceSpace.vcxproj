@@ -104,6 +104,7 @@
     <ClInclude Include="tests.h" />
     <ClInclude Include="webcam.h" />
     <ClInclude Include="Верхний колонтитул.h" />
+    <ClInclude Include="Верхний колонтитул1.h" />
     <ClInclude Include="Верхний колонтитул2.h" />
     <ClInclude Include="Верхний колонтитул3.h" />
   </ItemGroup>

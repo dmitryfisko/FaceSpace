@@ -18,13 +18,21 @@ WebCam::~WebCam() {
 }
 
 void WebCam::start() {
-    CLIBridge::capture = cvCaptureFromCAM(0);
-    reader->start();
+    if (!isRun) {
+        reader->start();
+        isRun = true;
+    }
 }
 
 void WebCam::stop() {
-    cvReleaseCapture(&CLIBridge::capture);
-    reader->stop();
+    if (isRun) {
+        reader->stop();
+        isRun = false;
+    }
+}
+
+bool WebCam::isRunning() {
+    return isRun;
 }
 
 HBITMAP WebCam::getBitmap() {
@@ -50,6 +58,7 @@ void CLIBridge::CaptureReader::stop() {
 }
 
 void CLIBridge::CaptureReader::task(Object^ sender, DoWorkEventArgs^ e) {
+    CLIBridge::capture = cvCaptureFromCAM(0);
     for (; !reader->CancellationPending;) {
         frame = cvQueryFrame(capture);
         Mat image = frame;
@@ -59,10 +68,10 @@ void CLIBridge::CaptureReader::task(Object^ sender, DoWorkEventArgs^ e) {
             RECT rect;
             GetClientRect(hwnd, &rect);
             InvalidateRect(hwnd, &rect, false);
-            System::Threading::Thread::Sleep(10);
+            System::Threading::Thread::Sleep(50);
         } 
     }
-    cvReleaseImage(&frame);
+    cvReleaseCapture(&CLIBridge::capture);
     e->Cancel = true;
 }
 
