@@ -23,10 +23,11 @@ private:
     inline long double sqr(long double val);
     inline void overlayImage(const Mat &background, const Mat &foreground, Mat &output, cv::Point2i location);
     void find_scc(int v, bool was[], vector<int> graph[], vector<int> &path);
-    Rect scaleRect(Rect &rect, double scale, int width, int height);
 public:
-    const enum DetectMode { CheckHasFace, FindAllFaces };
-
     FaceDetector();
+    
+    const enum DetectMode { CheckHasFace, FindAllFaces };
+    
+    static Rect scaleRect(Rect &rect, double scale, int limitX, int limitY);
     vector<Rect> detect(Mat& originalFrame, DetectMode MODE);
 };

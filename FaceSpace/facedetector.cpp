@@ -57,15 +57,15 @@ void FaceDetector::find_scc(int v, bool was[], vector<int> graph[], vector<int> 
 }
 
 //Is make rect const?
-Rect FaceDetector::scaleRect(Rect &rect, double scale, int width, int height) {
-    assert(scale > 1);
+Rect FaceDetector::scaleRect(Rect &rect, double scale, int limitX, int limitY) {
+    //assert(scale > 1);
     assert(rect.width == rect.height);
 
     int offset = rect.width * (scale - 1) / 2;
     offset = min(offset, rect.x);
     offset = min(offset, rect.y);
-    offset = min(offset, width - rect.x - rect.width);
-    offset = min(offset, height - rect.y - rect.height);
+    offset = min(offset, limitX - rect.x - rect.width);
+    offset = min(offset, limitY - rect.y - rect.height);
     // Did it placed in heap?
     return Rect(rect.x - offset, rect.y - offset, 
                 rect.width + offset * 2, rect.height + offset * 2);

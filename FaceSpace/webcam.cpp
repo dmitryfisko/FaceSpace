@@ -5,28 +5,26 @@
 
 #include "assert.h"
 
-IplImage* CLIBridge::frame = 0;
-CvCapture* CLIBridge::capture = 0;
-HBITMAP CLIBridge::bitmap = NULL;
+HBITMAP WebCam::bitmap = NULL;
+bool WebCam::isRun = NULL;
+HANDLE WebCam::readerThread;
+IplImage* WebCam::frame = NULL;
+CvCapture* WebCam::capture = NULL;
+HWND WebCam::hWnd = NULL;
 
-WebCam::WebCam() {
-    reader = gcnew CLIBridge::CaptureReader();
-}
-
-WebCam::~WebCam() {
-    delete reader;
+void WebCam::setHWND(HWND _hWnd) {
+    hWnd = _hWnd;
 }
 
 void WebCam::start() {
     if (!isRun) {
-        reader->start();
+        readerThread = CreateThread(NULL, NULL, &readerThreadProc, NULL, NULL, NULL);
         isRun = true;
     }
 }
 
 void WebCam::stop() {
     if (isRun) {
-        reader->stop();
         isRun = false;
     }
 }
@@ -36,30 +34,12 @@ bool WebCam::isRunning() {
 }
 
 HBITMAP WebCam::getBitmap() {
-    return CLIBridge::bitmap;
+    return bitmap;
 }
 
-CLIBridge::CaptureReader::CaptureReader() {
-    reader = gcnew System::ComponentModel::BackgroundWorker();
-    reader->WorkerSupportsCancellation = true;
-    reader->DoWork += gcnew DoWorkEventHandler(this, &CaptureReader::task);
-}
-
-CLIBridge::CaptureReader::~CaptureReader() {
-    delete reader;
-}
-
-void CLIBridge::CaptureReader::start() {
-    reader->RunWorkerAsync();
-}
-
-void CLIBridge::CaptureReader::stop() {
-    reader->CancelAsync();
-}
-
-void CLIBridge::CaptureReader::task(Object^ sender, DoWorkEventArgs^ e) {
-    CLIBridge::capture = cvCaptureFromCAM(0);
-    for (; !reader->CancellationPending;) {
+DWORD WINAPI WebCam::readerThreadProc(HANDLE handle) {
+    capture = cvCaptureFromCAM(0);
+    for (; isRun;) {
         IplImage *tempFrame = cvQueryFrame(capture);
         if (tempFrame && (tempFrame->height > 0 && tempFrame->width > 0)) {
             frame = tempFrame;
@@ -68,14 +48,15 @@ void CLIBridge::CaptureReader::task(Object^ sender, DoWorkEventArgs^ e) {
             RECT rect;
             GetClientRect(hwnd, &rect);
             InvalidateRect(hwnd, &rect, false);
-            System::Threading::Thread::Sleep(50);
+            Sleep(50);
         } 
     }
-    cvReleaseCapture(&CLIBridge::capture);
-    e->Cancel = true;
+    cvReleaseCapture(&capture);
+    TerminateThread(readerThread, 0);
+    return 0;
 }
 
-bool CLIBridge::CaptureReader::IplImage2Bmp(IplImage *pImage, HBITMAP &hBitmap) {
+bool WebCam::IplImage2Bmp(IplImage *pImage, HBITMAP &hBitmap) {
     if (pImage && pImage->depth == IPL_DEPTH_8U) {
         uchar buffer[sizeof(BITMAPINFOHEADER) + 1024];
         BITMAPINFO* bmi = (BITMAPINFO*) buffer;
