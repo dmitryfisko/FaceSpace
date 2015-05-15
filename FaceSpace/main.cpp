@@ -1,14 +1,14 @@
 // FaceSpace.cpp: определ€ет точку входа дл€ приложени€.
 //
 
-#include "stdafx.h"
+#include <common/stdafx.h>
 #include "resource.h"
 #include "webcam.h"
-#include "facedetector.h"
+#include <common/facedetector.h>
 #include <ctime>
 
 #define MAX_LOADSTRING 100
-#define PHOTO_BUTTON_RADIUS 35
+#define PHOTO_BUTTON_RADIUS 41
 #define CIRCLE_ANIMATION_TIME 1250
 
 #define sqr(x) (x)*(x)
@@ -22,13 +22,13 @@ vector<Rect> faces;
 HDC memHDC;
 HDC memHDC2;
 HGDIOBJ memBitmap2;
-HANDLE timerThread;
+HANDLE loadingThread;
 HANDLE facedetectionThread;
 bool isLoadingRunning = false;
 bool isLoadingExpanding = true;
 int clientWidth;
 int clientHeight;
-HWND hWnd;
+HWND globalHwnd;
 
 // ќтправить объ€влени€ функций, включенных в этот модуль кода:
 ATOM				MyRegisterClass(HINSTANCE hInstance);
@@ -60,7 +60,7 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 
 	hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_FACESPACE));
 
-    webcam.setHWND(hWnd);
+    webcam.setHWND(globalHwnd);
     webcam.start();
     // ÷икл основного сообщени€:
 	while (GetMessage(&msg, NULL, 0, 0)) {
@@ -113,23 +113,22 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) {
    hInst = hInstance; // —охранить дескриптор экземпл€ра в глобальной переменной
 
-   hWnd = CreateWindow(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
+   globalHwnd = CreateWindow(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
       CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, NULL, NULL, hInstance, NULL);
 
-   if (!hWnd)
-   {
+   if (!globalHwnd) {
       return FALSE;
    }
 
-   ShowWindow(hWnd, nCmdShow);
-   UpdateWindow(hWnd);
+   ShowWindow(globalHwnd, nCmdShow);
+   UpdateWindow(globalHwnd);
 
    return TRUE;
 }
 
 void getButtonTakePhotoXY(int &x, int &y) {
-    x = clientWidth - PHOTO_BUTTON_RADIUS * 2 - 20;
-    y = clientHeight - PHOTO_BUTTON_RADIUS * 2 - 20;
+    x = clientWidth - PHOTO_BUTTON_RADIUS * 2 - 8;
+    y = clientHeight - PHOTO_BUTTON_RADIUS * 2 - 8;
 }
 
 void displayWebCamFrame(HDC &hdc, bool isJustMemorizeInMem2) {
@@ -171,9 +170,9 @@ void displayWebCamFrame(HDC &hdc, bool isJustMemorizeInMem2) {
     if (!dX || !dY) {
         //HBRUSH brush = CreateSolidBrush(RGB(139, 195, 74)); //green
         //HBRUSH brush = CreateSolidBrush(RGB(63, 81, 181)); //dark blue
-        HBRUSH brush = CreateSolidBrush(RGB(255, 255, 255)); //white
+        HBRUSH brush = CreateSolidBrush(RGB(255, 152, 0)); //white
         RECT rect;
-        GetClientRect(hWnd, &rect);
+        GetClientRect(globalHwnd, &rect);
         FillRect(memHDC2, &rect, brush);
         DeleteObject(brush);
     }
@@ -182,39 +181,13 @@ void displayWebCamFrame(HDC &hdc, bool isJustMemorizeInMem2) {
     StretchBlt(memHDC2, dX, dY, dWidth, dHeight, 
                 memHDC, 0, 0, bitmap.bmWidth, bitmap.bmHeight, SRCCOPY);
 
-    int buttonX;
-    int buttonY;
-    getButtonTakePhotoXY(buttonX, buttonY);
-    HPEN pen = CreatePen(PS_NULL, 0, RGB(0, 0, 0));
-    HPEN oldPen = (HPEN)SelectObject(memHDC2, pen);
-    //HBRUSH brush = CreateSolidBrush(RGB(255, 255, 255));
-    //HBRUSH brush = CreateSolidBrush(RGB(63, 81, 181));
-    HBRUSH brush = CreateSolidBrush(RGB(255, 152, 0));
-    HBRUSH oldBrush = (HBRUSH)SelectObject(memHDC2, brush);
-    Ellipse(memHDC2, buttonX - PHOTO_BUTTON_RADIUS - 6, buttonY - PHOTO_BUTTON_RADIUS - 6,
-            buttonX + PHOTO_BUTTON_RADIUS + 6, buttonY + PHOTO_BUTTON_RADIUS + 6);
-    SelectObject(memHDC2, oldBrush);
-    DeleteObject(brush);
-    brush = CreateSolidBrush(RGB(255, 255, 255));
-    oldBrush = (HBRUSH)SelectObject(memHDC2, brush);
-    Ellipse(memHDC2, buttonX - PHOTO_BUTTON_RADIUS - 3, buttonY - PHOTO_BUTTON_RADIUS - 3,
-            buttonX + PHOTO_BUTTON_RADIUS + 3, buttonY + PHOTO_BUTTON_RADIUS + 3);
-    SelectObject(memHDC2, oldBrush);
-    DeleteObject(brush);
-    brush = CreateSolidBrush(RGB(255, 152, 0));
-    oldBrush = (HBRUSH)SelectObject(memHDC2, brush);
-    Ellipse(memHDC2, buttonX - PHOTO_BUTTON_RADIUS, buttonY - PHOTO_BUTTON_RADIUS,
-            buttonX + PHOTO_BUTTON_RADIUS, buttonY + PHOTO_BUTTON_RADIUS);
-    SelectObject(memHDC2, oldBrush);
-    DeleteObject(brush);
-    SelectObject(memHDC2, oldPen);
-    DeleteObject(pen);
-
-    double scale = dWidth / bitmap.bmWidth;
-    HPEN linePen = CreatePen(PS_SOLID, 6, RGB(238, 255, 65));
+    double scale = (double)dWidth / bitmap.bmWidth;
+    //HPEN linePen = CreatePen(PS_SOLID, 5, RGB(238, 255, 65));
+    HPEN linePen = CreatePen(PS_SOLID, 5, RGB(255, 255, 255));
     HPEN oldLinePen = (HPEN)SelectObject(memHDC2, linePen);
     for (int i = 0; i < faces.size(); ++i) {
-        Rect face = FaceDetector::scaleRect(faces[i], scale / 1.2, INT_MAX, INT_MAX);
+        Rect scaledFace = FaceDetector::scaleRect(faces[i], scale);
+        Rect face = FaceDetector::scaleRectSize(scaledFace, 0.7, INT_MAX, INT_MAX);
         MoveToEx(memHDC2, dX + face.x, dY + face.y, NULL);
         LineTo(memHDC2, dX + face.x + face.width, dY + face.y);
         LineTo(memHDC2, dX + face.x + face.width, dY + face.y + face.height);
@@ -224,18 +197,43 @@ void displayWebCamFrame(HDC &hdc, bool isJustMemorizeInMem2) {
     SelectObject(memHDC2, oldLinePen);
     DeleteObject(linePen);
 
-
+    int buttonX;
+    int buttonY;
+    getButtonTakePhotoXY(buttonX, buttonY);
+    HPEN pen = CreatePen(PS_NULL, 0, RGB(0, 0, 0));
+    HPEN oldPen = (HPEN)SelectObject(memHDC2, pen);
+    //HBRUSH brush = CreateSolidBrush(RGB(255, 255, 255));
+    //HBRUSH brush = CreateSolidBrush(RGB(63, 81, 181));
+    HBRUSH brush = CreateSolidBrush(RGB(255, 255, 255));
+    HBRUSH oldBrush = (HBRUSH)SelectObject(memHDC2, brush);
+    Ellipse(memHDC2, buttonX - PHOTO_BUTTON_RADIUS, buttonY - PHOTO_BUTTON_RADIUS,
+            buttonX + PHOTO_BUTTON_RADIUS, buttonY + PHOTO_BUTTON_RADIUS);
+    SelectObject(memHDC2, oldBrush);
+    DeleteObject(brush);
+    brush = CreateSolidBrush(RGB(255, 152, 0));
+    oldBrush = (HBRUSH)SelectObject(memHDC2, brush);
+    Ellipse(memHDC2, buttonX - PHOTO_BUTTON_RADIUS + 3, buttonY - PHOTO_BUTTON_RADIUS + 3,
+            buttonX + PHOTO_BUTTON_RADIUS - 3, buttonY + PHOTO_BUTTON_RADIUS - 3);
+    SelectObject(memHDC2, oldBrush);
+    DeleteObject(brush);
+    brush = CreateSolidBrush(RGB(255, 255, 255));
+    oldBrush = (HBRUSH)SelectObject(memHDC2, brush);
+    Ellipse(memHDC2, buttonX - PHOTO_BUTTON_RADIUS + 6, buttonY - PHOTO_BUTTON_RADIUS + 6,
+            buttonX + PHOTO_BUTTON_RADIUS - 6, buttonY + PHOTO_BUTTON_RADIUS - 6);
+    SelectObject(memHDC2, oldBrush);
+    DeleteObject(brush);
+    SelectObject(memHDC2, oldPen);
+    DeleteObject(pen);
 
     if (!isJustMemorizeInMem2) {
-        BitBlt(hdc, 0, 0, clientWidth, clientHeight, memHDC2, 0, 0, SRCCOPY);
-        
+        BitBlt(hdc, 0, 0, clientWidth, clientHeight, memHDC2, 0, 0, SRCCOPY); 
     } 
     SelectObject(memHDC2, oldBitmap2);
         
     SelectObject(memHDC, oldBitmap);
 }
 
-bool displayLoading(HDC &hdc, size_t passedTime, bool isReversed, bool isSetFirstColor,
+bool displayLoading(HDC &hdc, size_t passedTime, bool isReversed, bool isDuplicateLastColor,
                     vector<COLORREF> &colors) {
     HGDIOBJ tempBitmap = NULL;
     bool isLoadFromMemorized = isReversed;
@@ -260,15 +258,18 @@ bool displayLoading(HDC &hdc, size_t passedTime, bool isReversed, bool isSetFirs
         radius = ((double)passedTime / CIRCLE_ANIMATION_TIME) * maxDist;
     }
 
-    if (isSetFirstColor) {
-        colorInd = 0;
+    COLORREF color;
+    if (isReversed || isDuplicateLastColor) {
+        color = RGB(255, 255, 255);
+    } else {
+        color = colors[colorInd];
     }
 
-    HPEN pen = CreatePen(PS_NULL, 0, colors[colorInd]);
+    HPEN pen = CreatePen(PS_NULL, 0, color);
     HPEN oldPen = (HPEN)SelectObject(memHDC2, pen);
     //HBRUSH brush = CreateSolidBrush(RGB(255, 255, 255));
     //HBRUSH brush = CreateSolidBrush(RGB(63, 81, 181));
-    HBRUSH brush = CreateSolidBrush(colors[colorInd]);
+    HBRUSH brush = CreateSolidBrush(color);
     HBRUSH oldBrush = (HBRUSH)SelectObject(memHDC2, brush);
     Ellipse(memHDC2, buttonX - radius, buttonY - radius,
             buttonX + radius, buttonY + radius);
@@ -292,12 +293,15 @@ void displayUI(HDC &hdc) {
     displayWebCamFrame(hdc, false);
 }
 
-DWORD WINAPI timerThreadProc(HANDLE handle) {
+DWORD WINAPI loadingThreadProc(HANDLE handle) {
     Sleep(50);
     const int fps = 100;
     
-    HDC hdc = GetDC(hWnd);
+    HDC hdc = GetDC(globalHwnd);
     int delay = 1000 / fps;
+
+    LONG windowParams = GetWindowLong(globalHwnd, GWL_STYLE)&~WS_SIZEBOX;
+    SetWindowLong(globalHwnd, GWL_STYLE, windowParams);
 
     vector<COLORREF> colors;
     colors.push_back(RGB(255, 152, 0));
@@ -309,28 +313,34 @@ DWORD WINAPI timerThreadProc(HANDLE handle) {
     int passedTime = 0;
     size_t startTime = clock();
     bool reversed = false;
-    bool isSetFirstColor = false;
+    bool isDuplicateLastColor = false;
     for (;;) {
-        if (!reversed || !isSetFirstColor) {
-            bool isLimitReached = displayLoading(hdc, clock() - startTime, 
-                                                 reversed, isSetFirstColor, colors);
+        size_t passedTime = clock() - startTime;
+        if (!reversed || !isDuplicateLastColor) {
+            bool isLimitReached = displayLoading(hdc, passedTime,
+                                                 reversed, isDuplicateLastColor, colors);
             if (isLimitReached && !isLoadingRunning) {
-                size_t difTime = clock() - startTime;
+                size_t difTime = passedTime;
                 difTime %= CIRCLE_ANIMATION_TIME;
                 startTime -= CIRCLE_ANIMATION_TIME - difTime;
-                if (!isSetFirstColor) {
-                    isSetFirstColor = true;
+                if (!isDuplicateLastColor) {
+                    if (passedTime / CIRCLE_ANIMATION_TIME > 1) {
+                        isDuplicateLastColor = true;
+                    }
                 } else {
                     reversed = true;
                 }
             } else if (isLimitReached && !isLoadingRunning) {
-                isSetFirstColor = true;
+                isDuplicateLastColor = true;
             }
         } else {
             displayWebCamFrame(hdc, true);
             bool isLimitReached = displayLoading(hdc, clock() - startTime, 
                                                  reversed, false, colors);
             if (isLimitReached) {
+                windowParams = GetWindowLong(globalHwnd, GWL_STYLE)|WS_SIZEBOX;
+                SetWindowLong(globalHwnd, GWL_STYLE, windowParams);
+                
                 displayWebCamFrame(hdc, false);
                 DeleteDC(hdc);
                 TerminateThread(facedetectionThread, 0);
@@ -365,7 +375,6 @@ DWORD WINAPI facedetectionThreadProc(HANDLE handle) {
 //
 //
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
-	int wmId, wmEvent;
 	PAINTSTRUCT ps;
 	HDC hdc;
     int clickX;
@@ -384,7 +393,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
         EndPaint(hWnd, &ps);
 		break;
     case WM_SIZE:
-        hdc = BeginPaint(hWnd, &ps);
+        hdc = GetDC(globalHwnd);
+        DeleteDC(memHDC);
+        DeleteDC(memHDC2);
         memHDC = CreateCompatibleDC(hdc);
         memHDC2 = CreateCompatibleDC(hdc);
         
@@ -393,17 +404,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
         clientWidth = rect.right - rect.left;
         clientHeight = rect.bottom - rect.top;
         memBitmap2 = ::CreateCompatibleBitmap(hdc, clientWidth, clientHeight);
-        EndPaint(hWnd, &ps);
+        displayUI(hdc);
         break;
     case WM_LBUTTONUP:
         clickX = LOWORD(lParam);
         clickY = HIWORD(lParam);
         getButtonTakePhotoXY(buttonX, buttonY);
-        if (sqr(buttonX - clickX) + sqr(buttonX - clickX) <= sqr(PHOTO_BUTTON_RADIUS)) {
+        if (sqr(buttonX - clickX) + sqr(buttonY - clickY) <= sqr(PHOTO_BUTTON_RADIUS)) {
             if (webcam.isRunning()) {
                 webcam.stop();
                 isLoadingRunning = true;
-                timerThread = CreateThread(NULL, NULL, &timerThreadProc, NULL, NULL, NULL);
+                loadingThread = CreateThread(NULL, NULL, &loadingThreadProc, NULL, NULL, NULL);
                 facedetectionThread = CreateThread(NULL, NULL, &facedetectionThreadProc, NULL, NULL, NULL);
             } else {
                 faces.clear();
@@ -414,7 +425,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 	case WM_DESTROY:
         DeleteDC(memHDC2);
         DeleteDC(memHDC);
-        TerminateThread(timerThread, 0); 
+        TerminateThread(loadingThread, 0); 
+        TerminateThread(facedetectionThread, 0);
+        webcam.stop();
         PostQuitMessage(0);
 		break;
 	default:

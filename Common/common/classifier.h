@@ -9,7 +9,6 @@ using namespace std;
 
 class Classifier {
     private:
-
         static const double MAX_DIST;
         static const double THRESHOLD;
 
@@ -23,17 +22,10 @@ class Classifier {
 
         __int64 prevUniqueUID = 0;
         __int64 number = 0;
-        //double lastMinDist = 0;
-        //__int64 lastNearestNumber = 0;
         vector<Point> points;
 
         double distance(vector<double> &v1, vector<double> &v2);
-
     public:
-
         __int64 getUID(vector<double> &point);
         bool isSame(vector<double> &v1, vector<double> &v2);
-        //__int64 getNearestNumber();
-        //double getLastMinDist();
-        
 };

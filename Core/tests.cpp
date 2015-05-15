@@ -1,8 +1,8 @@
-#include "stdafx.h"
+#include <common/stdafx.h>
 #include "tests.h"
-#include "featureextractor.h"
-#include "classifier.h"
-#include "networkutils.h"
+#include <common/featureextractor.h>
+#include <common/classifier.h>
+#include <common/networkutils.h>
 
 #include <fstream>
 

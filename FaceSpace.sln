@@ -3,7 +3,30 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
 VisualStudioVersion = 12.0.30501.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FaceSpace", "FaceSpace\FaceSpace.vcxproj", "{621AF028-1D4C-47A0-A85C-84A471D03E2D}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UI", "FaceSpace\FaceSpace.vcxproj", "{621AF028-1D4C-47A0-A85C-84A471D03E2D}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Core", "Core\Core.vcxproj", "{D9D1DC8D-6DBD-4AE9-8E2D-4E7A953F8942}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Common", "Common", "{50BFB67D-487B-4A80-ACD3-C009E2E50C10}"
+	ProjectSection(SolutionItems) = preProject
+		Common\common\classifier.cpp = Common\common\classifier.cpp
+		Common\common\classifier.h = Common\common\classifier.h
+		Common\common\facedetector.cpp = Common\common\facedetector.cpp
+		Common\common\facedetector.h = Common\common\facedetector.h
+		Common\common\networkutils.cpp = Common\common\networkutils.cpp
+		Common\common\networkutils.h = Common\common\networkutils.h
+		Common\common\stdafx.h = Common\common\stdafx.h
+		Common\common\targetver.h = Common\common\targetver.h
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "extractor", "extractor", "{25DDC901-F58D-4C84-9A41-D2BD4038D47E}"
+	ProjectSection(SolutionItems) = preProject
+		Common\common\array2d.cpp = Common\common\array2d.cpp
+		Common\common\featureextractor.cpp = Common\common\featureextractor.cpp
+		Common\common\featureextractor.h = Common\common\featureextractor.h
+		Common\common\visualizer.cpp = Common\common\visualizer.cpp
+		Common\common\weights.cpp = Common\common\weights.cpp
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,8 +38,15 @@ Global
 		{621AF028-1D4C-47A0-A85C-84A471D03E2D}.Debug|Win32.Build.0 = Debug|Win32
 		{621AF028-1D4C-47A0-A85C-84A471D03E2D}.Release|Win32.ActiveCfg = Release|Win32
 		{621AF028-1D4C-47A0-A85C-84A471D03E2D}.Release|Win32.Build.0 = Release|Win32
+		{D9D1DC8D-6DBD-4AE9-8E2D-4E7A953F8942}.Debug|Win32.ActiveCfg = Debug|Win32
+		{D9D1DC8D-6DBD-4AE9-8E2D-4E7A953F8942}.Debug|Win32.Build.0 = Debug|Win32
+		{D9D1DC8D-6DBD-4AE9-8E2D-4E7A953F8942}.Release|Win32.ActiveCfg = Release|Win32
+		{D9D1DC8D-6DBD-4AE9-8E2D-4E7A953F8942}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{25DDC901-F58D-4C84-9A41-D2BD4038D47E} = {50BFB67D-487B-4A80-ACD3-C009E2E50C10}
 	EndGlobalSection
 EndGlobal

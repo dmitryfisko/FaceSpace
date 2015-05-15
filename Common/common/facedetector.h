@@ -10,8 +10,8 @@ using namespace cv;
 class FaceDetector {
 
 private:
-    const string FACE_CASSCADES = "haarcascade_frontalface_default.xml";
-    const string EYE_CASSCADES = "haarcascade_eye_tree_eyeglasses.xml";
+    const string FACE_CASSCADES = "../Common/common/haarcascade_frontalface_default.xml";
+    const string EYE_CASSCADES = "../Common/common/haarcascade_eye_tree_eyeglasses.xml";
 
     struct EyeInfo;
 
@@ -28,6 +28,7 @@ public:
     
     const enum DetectMode { CheckHasFace, FindAllFaces };
     
-    static Rect scaleRect(Rect &rect, double scale, int limitX, int limitY);
+    static Rect scaleRect(Rect &r, double scale);
+    static Rect scaleRectSize(Rect &rect, double scale, int limitX, int limitY);
     vector<Rect> detect(Mat& originalFrame, DetectMode MODE);
 };

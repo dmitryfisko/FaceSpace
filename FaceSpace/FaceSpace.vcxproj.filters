@@ -13,90 +13,41 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Файлы исходного кода\classifier">
-      <UniqueIdentifier>{7670a808-728f-4c25-8e1a-abd320b591ba}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Файлы исходного кода\extractor">
-      <UniqueIdentifier>{aae67c7c-474d-4cbd-9fb5-2f9ad30f9579}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Файлы исходного кода\miner">
-      <UniqueIdentifier>{b36e9cc4-bc0e-429a-b9fe-0ed362d5bc3c}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Файлы исходного кода\ui">
       <UniqueIdentifier>{4b0dc05f-8452-421b-b7b4-3118dfe2447d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Файлы исходного кода\detector">
+      <UniqueIdentifier>{18d71687-8d3f-41b5-b4d1-ef433638d510}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="stdafx.h">
-      <Filter>Заголовочные файлы</Filter>
-    </ClInclude>
+    <Compile Include="any_abs_or_rel_path\**\*.*">
+      <Link>%(RecursiveDir)%(FileName)</Link>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
     <ClInclude Include="Resource.h">
-      <Filter>Заголовочные файлы</Filter>
-    </ClInclude>
-    <ClInclude Include="classifier.h">
-      <Filter>Заголовочные файлы</Filter>
-    </ClInclude>
-    <ClInclude Include="facedetector.h">
-      <Filter>Заголовочные файлы</Filter>
-    </ClInclude>
-    <ClInclude Include="featureextractor.h">
-      <Filter>Заголовочные файлы</Filter>
-    </ClInclude>
-    <ClInclude Include="imageminer.h">
-      <Filter>Заголовочные файлы</Filter>
-    </ClInclude>
-    <ClInclude Include="networkutils.h">
-      <Filter>Заголовочные файлы</Filter>
-    </ClInclude>
-    <ClInclude Include="tests.h">
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
     <ClInclude Include="webcam.h">
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
-    <ClInclude Include="targetver.h">
+    <ClInclude Include="..\Common\common\facedetector.h">
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="stdafx.cpp">
-      <Filter>Файлы исходного кода</Filter>
-    </ClCompile>
     <ClCompile Include="main.cpp">
       <Filter>Файлы исходного кода</Filter>
     </ClCompile>
-    <ClCompile Include="networkutils.cpp">
-      <Filter>Файлы исходного кода</Filter>
-    </ClCompile>
-    <ClCompile Include="tests.cpp">
-      <Filter>Файлы исходного кода</Filter>
-    </ClCompile>
-    <ClCompile Include="classifier.cpp">
-      <Filter>Файлы исходного кода\classifier</Filter>
-    </ClCompile>
-    <ClCompile Include="array2d.cpp">
-      <Filter>Файлы исходного кода\extractor</Filter>
-    </ClCompile>
-    <ClCompile Include="featureextractor.cpp">
-      <Filter>Файлы исходного кода\extractor</Filter>
-    </ClCompile>
-    <ClCompile Include="facedetector.cpp">
-      <Filter>Файлы исходного кода</Filter>
-    </ClCompile>
-    <ClCompile Include="imageminer.cpp">
-      <Filter>Файлы исходного кода\miner</Filter>
-    </ClCompile>
-    <ClCompile Include="visualizer.cpp">
-      <Filter>Файлы исходного кода\extractor</Filter>
-    </ClCompile>
-    <ClCompile Include="weights.cpp">
-      <Filter>Файлы исходного кода\extractor</Filter>
-    </ClCompile>
     <ClCompile Include="webcam.cpp">
       <Filter>Файлы исходного кода\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Common\common\facedetector.cpp">
+      <Filter>Файлы исходного кода\detector</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -111,8 +62,5 @@
     <Image Include="FaceSpace.ico">
       <Filter>Файлы ресурсов</Filter>
     </Image>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="weights.dat" />
   </ItemGroup>
 </Project>

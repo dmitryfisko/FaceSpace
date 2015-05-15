@@ -1,6 +1,6 @@
 #pragma once
 
-#include "stdafx.h"
+#include <common/stdafx.h>
 #include "webcam.h"
 
 #include "assert.h"

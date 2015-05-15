@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include <common/stdafx.h>
 #include <stdio.h>
 #include <locale>
 #include <codecvt>
@@ -7,7 +7,7 @@
 #include <fstream>
 
 #include "imageminer.h"
-#include "networkutils.h"
+#include <common/networkutils.h>
 
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"

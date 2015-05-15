@@ -1,5 +1,5 @@
 #include <string>
-#include "facedetector.h"
+#include <common/facedetector.h>
 #include "rapidjson/document.h"
 
 using namespace std;

@@ -57,8 +57,8 @@ void FaceDetector::find_scc(int v, bool was[], vector<int> graph[], vector<int> 
 }
 
 //Is make rect const?
-Rect FaceDetector::scaleRect(Rect &rect, double scale, int limitX, int limitY) {
-    //assert(scale > 1);
+Rect FaceDetector::scaleRectSize(Rect &rect, double scale, int limitX, int limitY) {
+    assert(scale > 0);
     assert(rect.width == rect.height);
 
     int offset = rect.width * (scale - 1) / 2;
@@ -69,6 +69,11 @@ Rect FaceDetector::scaleRect(Rect &rect, double scale, int limitX, int limitY) {
     // Did it placed in heap?
     return Rect(rect.x - offset, rect.y - offset, 
                 rect.width + offset * 2, rect.height + offset * 2);
+}
+
+Rect FaceDetector::scaleRect(Rect &r, double scale) {
+    return Rect(r.x * scale, r.y * scale,
+                r.width * scale, r.height * scale);
 }
 
 
@@ -288,7 +293,7 @@ vector<Rect> FaceDetector::detect(Mat &image, DetectMode MODE) {
                 return checkedFaces;
             }
             checkedFaces.push_back( 
-                scaleRect(faces[i], 1.5, frameGray.cols, frameGray.rows) );
+                scaleRectSize(faces[i], 1.5, frameGray.cols, frameGray.rows) );
         }
 
         delete[] eyesInfo;
