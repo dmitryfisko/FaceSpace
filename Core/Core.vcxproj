@@ -19,7 +19,7 @@
     <ClCompile Include="..\Common\common\visualizer.cpp" />
     <ClCompile Include="..\Common\common\weights.cpp" />
     <ClCompile Include="imageminer.cpp" />
-    <ClCompile Include="main.cpp" />
+    <ClCompile Include="mainCore.cpp" />
     <ClCompile Include="tests.cpp" />
   </ItemGroup>
   <ItemGroup>

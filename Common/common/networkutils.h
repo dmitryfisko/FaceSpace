@@ -23,8 +23,7 @@ class NetworkUtils {
         static void initString(struct ResponseHolder *s);
         static string loadUrl(string &url);
     public:
-        static vector<string> loadTrainSetMiner();
-        static vector< vector<string> > loadTrainSetCFW();
+        static vector< vector<string> > loadTrainSetMiner();
         static map<string, vector<string>> loadTestSetLFW();
         static string requestProfilesData(string ids);
         static string requestUserPhotos(string id);

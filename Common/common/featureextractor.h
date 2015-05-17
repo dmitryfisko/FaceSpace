@@ -17,9 +17,7 @@ private:
         static const int CONV_LAYERS = 4;
         static const int CONV_MAPS[CONV_LAYERS];
         static const int CONV_EDGE[CONV_LAYERS];
-        static const int CONV_LAST_LAYER_NUM = CONV_LAYERS - 1;
-        static const int COMPETITIVE_WINNERS[CONV_LAYERS];
-        static const double MIN_VAL;
+        static const int LAST_LAYER_NUM = LAYERS_COUNT - 1;
     };
 
     static const int LAYER_INPUT = 0;
@@ -27,31 +25,6 @@ private:
     static const int LAYER_POOL = 2;
     static const int LAYER_NEIRON = 3;
     static const int LAYER_TYPE[SIZES::LAYERS_COUNT];
-
-    class Maximator {
-    private:
-        struct Item {
-            int x;
-            int y;
-            double val;
-            Item() {}
-            Item(int x, int y, double val) : x(x), y(y), val(val) {}
-        };
-
-        Item *items;
-        const int limit;
-        int counter;
-
-        inline void push(Item &temp);
-    public:
-        Maximator(int limit);
-        ~Maximator();
-
-        void add(int x, int y, double val);
-        int size();
-        void getXY(int index, int &x, int &y);
-        void clear();
-    };
 
     class Array2D {
     private:
@@ -61,7 +34,7 @@ private:
         int height;
     public:
         Array2D(const Array2D &prev);
-        Array2D(Mat &mat, bool isNormalize);
+        Array2D(Mat &mat);
         Array2D(int width, int height);
         Array2D(int width, int height, bool randomize);
         ~Array2D();
@@ -71,6 +44,7 @@ private:
         int getWidth();
         int getHeight();
         double getBias();
+        void fill(double val);
         void setBias(double val);
         double at(int x, int y);
         void set(int x, int y, double val);
@@ -81,6 +55,7 @@ private:
     private:
         int CONV_LAYER_MAPS[SIZES::CONV_LAYERS];
         int CONV_LAYER_EDGE[SIZES::CONV_LAYERS];
+        int CONV_LAYER_TYPE[SIZES::CONV_LAYERS];
 
         vector< Array2D > weights[SIZES::CONV_LAYERS];
     public:
@@ -102,15 +77,21 @@ private:
     bool isExtractorTrain = false;
     bool isVisualize = false;
     int trainEpoch = 1;
-    double baseLearningSpeed = 0.1;
+    double LEARNING_SPEED = 0.1;
 
-    vector<Array2D> mapsLayers[SIZES::LAYERS_COUNT];
+    vector<Array2D> layersMaps[SIZES::LAYERS_COUNT];
+    vector<Array2D> layersMapsDeriv[SIZES::CONV_LAYERS];
+    vector<Array2D> layersMapsError[SIZES::CONV_LAYERS];
     Weights weights;
 
-    inline double activation(double impulse);
-    void conv(vector<Array2D> &res, Array2D &prevMap, 
-              int layerNum, int &mapNum, int convNum);
-    void pool(Array2D &poolMap, Array2D &prevMap, int layerNum);
+    inline double convActiv(double sum);
+    inline double convActivDeriv(double sum);
+    inline double poolActiv(double sum);
+    inline double poolActivDeriv(double sum);
+    inline Rect getPossibleConvPositionsRect(int i, int j,
+                                             int layerEdge, int convEdge);
+    void conv(Array2D &prevMap, int layerNum, int &mapNum, int convNum);
+    void pool(Array2D &prevMap, int layerNum, int mapNum);
 public:
     FeatureExtractor();
 
@@ -118,6 +99,7 @@ public:
 
     vector<double> getVector(Mat &mat);
     vector<double> getVector(Mat &mat, bool visualize);
+    vector<double> backpropagation(Mat &image, vector<double> goal);
     void train(TrainMode MODE);
 
 };

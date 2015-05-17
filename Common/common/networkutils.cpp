@@ -16,36 +16,11 @@ const string NetworkUtils::TRAIN_MAINER_FOLDER_PATH = MINE_HQ_FACES_FOLDER_PATH;
 const string NetworkUtils::TEST_LFW_FOLDER_PATH = "d:\\X\\FaceSpace\\Datasets\\lfw\\";
 size_t NetworkUtils::prevRequestTime = 0;
 
-vector<string> NetworkUtils::loadTrainSetMiner() {
-    vector<string> images;
-    
-    struct dirent *ent;
-    DIR *dir = opendir(TRAIN_MAINER_FOLDER_PATH.c_str());
-    assert(dir != NULL);
-
-    while ((ent = readdir(dir)) != NULL) {
-        if (strcmp(ent->d_name, ".") == 0 ||
-                strcmp(ent->d_name, "..") == 0 ||
-            ent->d_type == DT_DIR) {
-            continue;
-        }
-
-        string image_path = TRAIN_MAINER_FOLDER_PATH + ent->d_name;
-        if (image_path.find("_face_hq_") != string::npos) {
-            images.push_back(image_path);
-        }
-    }
-    
-    closedir(dir);
-
-    return images;
-}
-
-/*vector< vector<string> > NetworkUtils::loadTrainSetCFW() {
+vector< vector<string> > NetworkUtils::loadTrainSetMiner() {
     vector< vector<string> > trainSet;
 
     struct dirent *ent;
-    DIR *dir = opendir(TRAIN_CFW_FOLDER_PATH.c_str());
+    DIR *dir = opendir(TRAIN_MAINER_FOLDER_PATH.c_str());
     assert(dir != NULL);
 
     while ((ent = readdir(dir)) != NULL) {
@@ -56,7 +31,7 @@ vector<string> NetworkUtils::loadTrainSetMiner() {
         }
 
         string humanName = ent->d_name;
-        string humanFolder = TRAIN_CFW_FOLDER_PATH + humanName + '\\';
+        string humanFolder = TRAIN_MAINER_FOLDER_PATH + humanName + '\\';
 
         DIR *innerDir = opendir(humanFolder.c_str());
         struct dirent *innerEnt;
@@ -78,7 +53,7 @@ vector<string> NetworkUtils::loadTrainSetMiner() {
     closedir(dir);
 
     return trainSet;
-}*/
+}
 
 map<string, vector<string>> NetworkUtils::loadTestSetLFW() {
     map<string, vector<string>> trainSet;

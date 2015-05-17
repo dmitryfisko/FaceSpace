@@ -7,8 +7,7 @@
 FeatureExtractor::Weights::Weights() {
     int convNum = 0;
     for (int layer = 0; layer < SIZES::LAYERS_COUNT; ++layer) {
-        if (LAYER_TYPE[layer] == LAYER_CONV ||
-                LAYER_TYPE[layer] == LAYER_NEIRON) {
+        if (LAYER_TYPE[layer] != LAYER_INPUT) {
             CONV_LAYER_MAPS[convNum] = SIZES::LAYER_MAPS[layer];
             CONV_LAYER_EDGE[convNum] = SIZES::CONV_EDGE[convNum];
             ++convNum;

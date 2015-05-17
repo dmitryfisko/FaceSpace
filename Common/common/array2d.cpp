@@ -37,8 +37,7 @@ FeatureExtractor::Array2D::Array2D(int width,
     normalize();
 }
 
-FeatureExtractor::Array2D::Array2D(Mat &mat,
-                                   bool isNormalize) : width(mat.cols), height(mat.rows) {
+FeatureExtractor::Array2D::Array2D(Mat &mat) : width(mat.cols), height(mat.rows) {
     data = new double[width * height];
     bias = 0;
     if (mat.channels() > 1) {
@@ -50,9 +49,6 @@ FeatureExtractor::Array2D::Array2D(Mat &mat,
         for (int j = 0; j < height; ++j) {
             set(i, j, ((double)pixelPtr[i*width + j] - 128) / 255);
         }
-    }
-    if (isNormalize) {
-        normalize();
     }
 }
 
@@ -104,6 +100,13 @@ int FeatureExtractor::Array2D::getHeight() {
 
 double FeatureExtractor::Array2D::getBias() {
     return bias;
+}
+
+void FeatureExtractor::Array2D::fill(double val) {
+    int len = width * height;
+    for (int i = 0; i < len; ++i) {
+        *(data + i) = val;
+    }
 }
 
 void FeatureExtractor::Array2D::setBias(double val) {
