@@ -1,9 +1,6 @@
 #include <vector>
 #include <cmath>
 #include <iostream>
-#include <assert.h>
-
-#define sqr(x) ((x)*(x)) 
 
 using namespace std;
 
@@ -23,9 +20,8 @@ class Classifier {
         __int64 prevUniqueUID = 0;
         __int64 number = 0;
         vector<Point> points;
-
-        double distance(vector<double> &v1, vector<double> &v2);
     public:
         __int64 getUID(vector<double> &point);
+        double getDif(vector<double> &v1, vector<double> &v2);
         bool isSame(vector<double> &v1, vector<double> &v2);
 };

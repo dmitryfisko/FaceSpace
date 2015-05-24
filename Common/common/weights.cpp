@@ -7,7 +7,8 @@
 FeatureExtractor::Weights::Weights() {
     int convNum = 0;
     for (int layer = 0; layer < SIZES::LAYERS_COUNT; ++layer) {
-        if (LAYER_TYPE[layer] != LAYER_INPUT) {
+        if (LAYER_TYPE[layer] == LAYER_CONV ||
+                LAYER_TYPE[layer] == LAYER_NEIRON) {
             CONV_LAYER_MAPS[convNum] = SIZES::LAYER_MAPS[layer];
             CONV_LAYER_EDGE[convNum] = SIZES::CONV_EDGE[convNum];
             ++convNum;
@@ -19,8 +20,7 @@ FeatureExtractor::Weights::Weights() {
         int layerMaps = CONV_LAYER_MAPS[layer];
         int convEdge = CONV_LAYER_EDGE[layer];
         for (int map = 0; map < layerMaps; ++map) {
-            Array2D item(convEdge, convEdge, true);
-            weights[layer].push_back(item);
+            weights[layer].push_back(Array2D(convEdge, convEdge, true));
             //??? how does push or assign objet to vector without copy constructor
         }
     }
@@ -59,20 +59,20 @@ FeatureExtractor::Weights::Weights() {
     }
 }
 
-FeatureExtractor::Weights::~Weights() {
+void FeatureExtractor::Weights::save() {
     ofstream out("weights.dat");
     if (!out) {
         return;
     }
 
-    for (int layer = 0; layer < SIZES::CONV_LAYERS; ++layer) {
-        int layerMaps = CONV_LAYER_MAPS[layer];
-        int convEdge = CONV_LAYER_EDGE[layer];
+    for (int convNum = 0; convNum < SIZES::CONV_LAYERS; ++convNum) {
+        int layerMaps = CONV_LAYER_MAPS[convNum];
+        int convEdge = CONV_LAYER_EDGE[convNum];
 
         out << layerMaps << endl;
         for (int map = 0; map < layerMaps; ++map) {
-            Array2D &weight = weights[layer][map];
-            out << convEdge << ' ' << convEdge << ' ' 
+            Array2D &weight = weights[convNum][map];
+            out << convEdge << ' ' << convEdge << ' '
                 << weight.getBias() << endl;
             for (int i = 0; i < convEdge; ++i) {
                 for (int j = 0; j < convEdge; ++j) {
@@ -81,6 +81,6 @@ FeatureExtractor::Weights::~Weights() {
                 out << endl;
             }
         }
-
     }
+    out.flush();
 }

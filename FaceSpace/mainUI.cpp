@@ -135,6 +135,7 @@ void displayWebCamFrame(HDC &hdc, bool isJustMemorizeInMem2) {
     HBITMAP hBitmap;
     hBitmap = webcam.getBitmap();
     if (hBitmap == NULL) {
+
         return;
     }
     BITMAP bitmap;
@@ -324,7 +325,7 @@ DWORD WINAPI loadingThreadProc(HANDLE handle) {
                 difTime %= CIRCLE_ANIMATION_TIME;
                 startTime -= CIRCLE_ANIMATION_TIME - difTime;
                 if (!isDuplicateLastColor) {
-                    if (passedTime / CIRCLE_ANIMATION_TIME > 1) {
+                    if (passedTime / CIRCLE_ANIMATION_TIME > 2) {
                         isDuplicateLastColor = true;
                     }
                 } else {

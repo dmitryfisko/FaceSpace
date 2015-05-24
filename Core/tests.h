@@ -8,10 +8,9 @@ using namespace cv;
 
 class Tests {
 
-    private:
-        static void normalizeImage(Mat &mat);
-        static void displayNearestImages(Mat &mat, string &nearestImagePath);
-    public:
-        static double getResLFW();
-
+private:
+    static void normalizeImage(Mat &mat);
+    static void displayNearestImages(Mat &mat, string &nearestImagePath);
+public:
+    static void outputResultPairsLFW();
 };

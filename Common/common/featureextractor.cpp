@@ -1,5 +1,7 @@
 #include "stdafx.h"
 #include "featureextractor.h"
+#include <common/classifier.h>
+
 #include "networkutils.h"
 
 #include <fstream>
@@ -26,22 +28,8 @@ FeatureExtractor::FeatureExtractor() {
         for (int map = 0; map < layerMaps; ++map) {
             layersMaps[layer].push_back(item);
             layersMapsError[layer].push_back(item);
+            layersMapsDeriv[layer].push_back(item);
         }
-    }
-
-    int convNum = 0;
-    for (int layer = 0; layer < SIZES::LAYERS_COUNT; ++layer) {
-        if (LAYER_TYPE[layer] == LAYER_INPUT) {
-            continue;
-        }
-
-        int layerEdge = SIZES::LAYER_EDGE[layer];
-        int layerMaps = SIZES::LAYER_MAPS[layer];
-        Array2D item(layerEdge, layerEdge);
-        for (int map = 0; map < layerMaps; ++map) {
-            layersMapsDeriv[convNum].push_back(item);
-        }
-        ++convNum;
     }
 }
 
@@ -50,8 +38,7 @@ double FeatureExtractor::convActiv(double sum) {
 }
 
 double FeatureExtractor::convActivDeriv(double sum) {
-    double _tanh = tanh(sum);
-    return 1 - sqr(_tanh);
+    return 1 - sqr( tanh(sum) );
 }
 
 double FeatureExtractor::poolActiv(double sum) {
@@ -63,16 +50,16 @@ double FeatureExtractor::poolActivDeriv(double sum) {
 }
 
 void FeatureExtractor::conv(Array2D &prevMap, int layerNum, int &mapNum, int convNum) {
-    vector<Array2D> &res = layersMaps[layerNum];
-    vector<Array2D> &resDeriv = layersMapsDeriv[convNum];
+    vector<Array2D> &layerMaps = layersMaps[layerNum];
+    vector<Array2D> &layerMapsDeriv = layersMapsDeriv[layerNum];
     int convEdge = SIZES::CONV_EDGE[convNum];
     int convMaps = SIZES::CONV_MAPS[convNum];
     int layerEdge = SIZES::LAYER_EDGE[layerNum];
 
     for (int map = 0; map < convMaps; ++map) {
         Array2D &weight = weights[convNum][mapNum];
-        Array2D &convMap = res[mapNum];
-        Array2D &derivMap = resDeriv[mapNum];
+        Array2D &convMap = layerMaps[mapNum];
+        Array2D &derivMap = layerMapsDeriv[mapNum];
         for (int i = 0; i < layerEdge; ++i) {
             for (int j = 0; j < layerEdge; ++j) {
                 double sum = 0;
@@ -115,7 +102,7 @@ void FeatureExtractor::pool(Array2D &prevMap, int layerNum, int mapNum) {
 vector<double> FeatureExtractor::getVector(Mat &mat, bool visualize) {
     isVisualize = visualize;
     vector<double> &ans = getVector(mat);
-    isVisualize = visualize;
+    isVisualize = false;
     return ans;
 }
 
@@ -125,13 +112,13 @@ vector<double> FeatureExtractor::getVector(Mat &image) {
     resize(mat, mat, Size(SIZES::LAYER_EDGE[0], SIZES::LAYER_EDGE[0]));
 
     Array2D inputArr(mat);
-    int convNum = 0;
+    //layersMaps[0][0] = inputArr;
     layersMaps[0].clear();
     layersMaps[0].push_back(inputArr);
 
+    int convNum = 0;
     for (int layer = 1; layer < SIZES::LAYERS_COUNT; ++layer) {
         int prevLayerMaps = SIZES::LAYER_MAPS[layer - 1];
-        int layerEdge = SIZES::LAYER_EDGE[layer - 1];
         
         if (LAYER_TYPE[layer] == LAYER_CONV ||
                 LAYER_TYPE[layer] == LAYER_NEIRON) {
@@ -144,7 +131,6 @@ vector<double> FeatureExtractor::getVector(Mat &image) {
             for (int map = 0; map < prevLayerMaps; ++map) {
                 pool(layersMaps[layer - 1][map], layer, map);
             }
-            ++convNum;
         }
     }
 
@@ -163,16 +149,16 @@ vector<double> FeatureExtractor::getVector(Mat &image) {
     return ans;
 }
 
-Rect FeatureExtractor::getPossibleConvPositionsRect(int i, int j, 
-                                                    int layerEdge, int convEdge) {
+Rect FeatureExtractor::getPointLocalFields(int i, int j,
+                                           int layerEdge, int convEdge) {
     int localLeft;
     int localRight;
     int localTop;
     int localBottom;
 
-    int offsetLeft = j - 1;
+    int offsetLeft = j;
     int offsetRight = layerEdge - j - 1;
-    int offsetTop = i - 1;
+    int offsetTop = i;
     int offsetBottom = layerEdge - i - 1;
 
     if (offsetLeft >= convEdge - 1) {
@@ -201,49 +187,34 @@ Rect FeatureExtractor::getPossibleConvPositionsRect(int i, int j,
                 localBottom - localTop + 1);
 }
 
-vector<double> FeatureExtractor::backpropagation(Mat &image, vector<double> goal) {
-    vector<double> out = getVector(image, false);
+void FeatureExtractor::backpropagation(Mat &image, vector<double> goal,
+                                       Distance mode) {
+    vector<double> response = getVector(image);
 
     int convNum = SIZES::CONV_LAYERS - 1;
     for (int layer = SIZES::LAST_LAYER_NUM; layer >= 0; --layer) {
         int layerMaps = SIZES::LAYER_MAPS[layer];
         int layerEdge = SIZES::LAYER_EDGE[layer];
-        int nextLayerEdge = SIZES::LAYER_EDGE[layer + 1];
        
         if (layer == SIZES::LAST_LAYER_NUM) {
             for (int map = 0; map < layerMaps; ++map) {
-                layersMapsError[layer][map].set(0, 0, out[map] - goal[map]);
+                layersMapsError[layer][map].set(0, 0, response[map] - goal[map]);
             }
             continue;
         }
 
-        if (LAYER_TYPE[layer + 1] == LAYER_NEIRON) {
-            for (int map = 0; map <= layerMaps; map++) {
-                Array2D &weight = weights[layer][map];
-                Array2D &derivMap = layersMapsDeriv[layer + 1][map];
-                Array2D &errorMap = layersMapsDeriv[layer + 1][map];
-                for (int i = 0; i < layerEdge; ++i) {
-                    for (int j = 0; j < layerEdge; ++j) {
-                        double erorr = errorMap.at(0, 0) * 
-                            derivMap.at(0, 0) * weight.at(i, j);
-                        layersMapsError[layer][map].set(i, j, erorr);
-                    }
-                }
-            }
-            --convNum;
-        }
-
         if (LAYER_TYPE[layer + 1] == LAYER_POOL) {
-            for (int map = 0; map <= layerMaps; map++) {
+            int nextLayerEdge = SIZES::LAYER_EDGE[layer + 1];
+            for (int map = 0; map < layerMaps; map++) {
                 Array2D &derivMap = layersMapsDeriv[layer + 1][map];
-                Array2D &errorMap = layersMapsDeriv[layer + 1][map];
+                Array2D &errorMap = layersMapsError[layer + 1][map];
 
                 for (int i = 0; i < nextLayerEdge; ++i) {
                     for (int j = 0; j < nextLayerEdge; ++j) {
                         double error = errorMap.at(i, j) * derivMap.at(i, j);
                         for (int k = 0; k < 2; ++k) {
                             for (int t = 0; t < 2; ++t) {
-                                layersMapsError[layer][map].set (i * 2 + k, 
+                                layersMapsError[layer][map].set(i * 2 + k, 
                                                                 j * 2 + t, error);
                             }
                         }
@@ -252,21 +223,23 @@ vector<double> FeatureExtractor::backpropagation(Mat &image, vector<double> goal
             }
         }
 
-        if (LAYER_TYPE[layer + 1] == LAYER_CONV) {
+        if (LAYER_TYPE[layer + 1] == LAYER_CONV || 
+                LAYER_TYPE[layer + 1] == LAYER_NEIRON) {
             int convEdge = SIZES::CONV_EDGE[convNum];
             int convMaps = SIZES::CONV_MAPS[convNum];
-            for (int map = 0; map <= layerMaps; map++) {
-                Array2D &weight = weights[layer][map];
+            int mapNum = 0;
+            for (int map = 0; map < layerMaps; map++) {
                 for (int i = 0; i < layerEdge; ++i) {
                     for (int j = 0; j < layerEdge; ++j) {
-                        Rect &area = getPossibleConvPositionsRect(i, j, layerEdge, convEdge);
+                        Rect &area = getPointLocalFields(i, j, layerEdge, convEdge);
                         double error = 0;
-                        for (int k = area.x; k < area.x + area.height; ++k) {
-                            for (int t = area.y; t < area.y + area.width; ++t) {
-                                for (int convMap = 0; convMap < convMaps; ++convMap) {
-                                    int convMapNum = map * convMaps + convMap;
-                                    Array2D &errorMap = layersMapsError[layer + 1][convMapNum];
-                                    Array2D &derivMap = layersMapsDeriv[layer + 1][convMapNum];
+                        for (int convMapNum = 0; convMapNum < convMaps; ++convMapNum) {
+                            int mapNum = map * convMaps + convMapNum;
+                            Array2D &weight = weights[convNum][mapNum];
+                            Array2D &errorMap = layersMapsError[layer + 1][mapNum];
+                            Array2D &derivMap = layersMapsDeriv[layer + 1][mapNum];
+                            for (int k = area.x; k < area.x + area.height; ++k) {
+                                for (int t = area.y; t < area.y + area.width; ++t) {
                                     error += weight.at(k, t) * 
                                         errorMap.at(i - k, j - t) *
                                         derivMap.at(i - k, j - t);
@@ -283,44 +256,46 @@ vector<double> FeatureExtractor::backpropagation(Mat &image, vector<double> goal
     }
 
     convNum = 0;
+    double learningMode = mode == Distance::Minimize ? -1 : 1;
     for (int layer = 1; layer < SIZES::LAYERS_COUNT; ++layer) {
+        if (LAYER_TYPE[layer] != LAYER_CONV &&
+                LAYER_TYPE[layer] != LAYER_NEIRON) {
+            continue;
+        }
         int prevLayerMaps = SIZES::LAYER_MAPS[layer - 1];
         int mapNum = 0;
         for (int map = 0; map < prevLayerMaps; ++map) {
-            if (LAYER_TYPE[layer] == LAYER_CONV || 
-                    LAYER_TYPE[layer] == LAYER_NEIRON) {
-                int convEdge = SIZES::CONV_EDGE[convNum];
-                int convMaps = SIZES::CONV_MAPS[convNum];
-                int layerEdge = SIZES::LAYER_EDGE[layer];
-                Array2D &prevMap = layersMaps[layer - 1][map];
+            int convEdge = SIZES::CONV_EDGE[convNum];
+            int convMaps = SIZES::CONV_MAPS[convNum];
+            int layerEdge = SIZES::LAYER_EDGE[layer];
+            Array2D &prevMap = layersMaps[layer - 1][map];
 
-                for (int map = 0; map < convMaps; ++map) {
-                    Array2D &weight = weights[convNum][mapNum];
-                    Array2D &convMap = layersMaps[layer][mapNum];
-                    Array2D &derivMap = layersMapsDeriv[layer][mapNum];
-                    Array2D &errorMap = layersMapsError[layer][mapNum];
-                    for (int i = 0; i < layerEdge; ++i) {
-                        for (int j = 0; j < layerEdge; ++j) {
-                            for (int k = 0; k < convEdge; ++k) {
-                                for (int t = 0; t < convEdge; ++t) {
-                                    double delta = (-1) * LEARNING_SPEED * 
-                                        prevMap.at(i + k, j + t) *
-                                        errorMap.at(i, j) * 
-                                        derivMap.at(i, j);
-                                    weight.add(k, t, delta);
-                                }
+            for (int convMapNum = 0; convMapNum < convMaps; ++convMapNum) {
+                Array2D &weight = weights[convNum][mapNum];
+                Array2D &derivMap = layersMapsDeriv[layer][mapNum];
+                Array2D &errorMap = layersMapsError[layer][mapNum];
+                for (int i = 0; i < layerEdge; ++i) {
+                    for (int j = 0; j < layerEdge; ++j) {
+                        for (int k = 0; k < convEdge; ++k) {
+                            for (int t = 0; t < convEdge; ++t) {
+                                double delta = LEARNING_SPEED * 
+                                    learningMode * 
+                                    prevMap.at(i + k, j + t) *
+                                    errorMap.at(i, j) * 
+                                    derivMap.at(i, j);
+                                weight.add(k, t, delta);
                             }
                         }
                     }
-                    ++mapNum;
                 }
-                ++convNum;
+                ++mapNum;
             }
         }
+        ++convNum;
     }
 }
 
-void FeatureExtractor::train(TrainMode MODE) {
+void FeatureExtractor::train(TrainMode MODE, int trainInterations) {
     if (MODE == TrainMode::New) {
         remove("weights.dat");
         //memory leak ?
@@ -328,7 +303,7 @@ void FeatureExtractor::train(TrainMode MODE) {
     }
     isExtractorTrain = true;
 
-    int maxTrainSetSize = 100000;
+    int maxTrainSetSize = trainInterations;
     trainEpoch = 0;
 
     vector< vector<string> > people = NetworkUtils::loadTrainSetMiner();
@@ -336,21 +311,34 @@ void FeatureExtractor::train(TrainMode MODE) {
     srand(time(NULL));
     while (trainEpoch < maxTrainSetSize) {
         int humanNum = rand() % people.size();
+        int difHumanNum = rand() % people.size();
+        
         int photoNum1 = rand() % people[humanNum].size();
         int photoNum2 = rand() % people[humanNum].size();
-        if (photoNum1 == photoNum2) {
+        int difPhotoNum = rand() % people[difHumanNum].size();
+        if (humanNum != difHumanNum && photoNum1 == photoNum2) {
             continue;
         }
 
         Mat image1 = imread(people[humanNum][photoNum1].c_str(), CV_LOAD_IMAGE_UNCHANGED);
         Mat image2 = imread(people[humanNum][photoNum2].c_str(), CV_LOAD_IMAGE_UNCHANGED);
-        backpropagation(image1, getVector(image2));
+        Mat difImage = imread(people[difHumanNum][difPhotoNum].c_str(), CV_LOAD_IMAGE_UNCHANGED);
+        Classifier classifier;
+        //double imagePrevDifMin = classifier.getDif(getVector(image1), getVector(image2));
+        //double imagePrevDifMax = classifier.getDif(getVector(image1), getVector(difImage));
+        vector<double> goal = getVector(image1);
+        backpropagation(image2, goal, Distance::Minimize);
+        backpropagation(difImage, goal, Distance::Maximize);
+        //double imageDifMin = classifier.getDif(getVector(image1), getVector(image2));
+        //double imageDifMax = classifier.getDif(getVector(image1), getVector(difImage));
 
         ++trainEpoch;
-        if (trainEpoch < maxTrainSetSize) {
+        if (trainEpoch >= maxTrainSetSize) {
             break;
         }
     }
+
+    weights.save();
 
     isExtractorTrain = false;
 }

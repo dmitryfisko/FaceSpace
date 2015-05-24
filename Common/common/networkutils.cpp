@@ -23,28 +23,36 @@ vector< vector<string> > NetworkUtils::loadTrainSetMiner() {
     DIR *dir = opendir(TRAIN_MAINER_FOLDER_PATH.c_str());
     assert(dir != NULL);
 
+    int userNum = 0;
     while ((ent = readdir(dir)) != NULL) {
         if (strcmp(ent->d_name, ".") == 0 ||
-            strcmp(ent->d_name, "..") == 0 ||
+                strcmp(ent->d_name, "..") == 0 ||
             ent->d_type != DT_DIR) {
             continue;
         }
 
-        string humanName = ent->d_name;
-        string humanFolder = TRAIN_MAINER_FOLDER_PATH + humanName + '\\';
+        string folderName = ent->d_name;
+        string humanFolder = TRAIN_MAINER_FOLDER_PATH + folderName + '\\';
 
         DIR *innerDir = opendir(humanFolder.c_str());
         struct dirent *innerEnt;
 
+        int photoNum = -1;
         while ((innerEnt = readdir(innerDir)) != NULL) {
             if (strcmp(innerEnt->d_name, ".") == 0 ||
-                strcmp(innerEnt->d_name, "..") == 0 ||
+                    strcmp(innerEnt->d_name, "..") == 0 ||
                 innerEnt->d_type == DT_DIR) {
                 continue;
             }
 
             string imagePath = humanFolder + innerEnt->d_name;
-            trainSet[humanName].push_back(imagePath);
+            if (++photoNum == 0) {
+                trainSet.push_back(vector<string>());
+            }
+            trainSet[userNum].push_back(imagePath);
+        }
+        if (photoNum != -1) {
+            ++userNum;
         }
 
         closedir(innerDir);
@@ -55,7 +63,7 @@ vector< vector<string> > NetworkUtils::loadTrainSetMiner() {
     return trainSet;
 }
 
-map<string, vector<string>> NetworkUtils::loadTestSetLFW() {
+map<string, vector<string>> NetworkUtils::loadPairsTestSetLFW() {
     map<string, vector<string>> trainSet;
     struct dirent *ent;
     DIR *dir = opendir(TEST_LFW_FOLDER_PATH.c_str());

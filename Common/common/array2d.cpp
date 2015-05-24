@@ -28,13 +28,13 @@ FeatureExtractor::Array2D::Array2D(int width,
     data = new double[len];
     //Does use srand in constructor or from called function?
     
-    bias = ((double) rand() / RAND_MAX * 2 - 1) * 2;
+    bias = ((double) rand() / RAND_MAX * 2 - 1) / 3;
     for (int i = 0; i < len; ++i) {
         if (randomize) {
             *(data + i) = ((double) rand() / RAND_MAX * 2 - 1);
         }
     }
-    normalize();
+    //normalize();
 }
 
 FeatureExtractor::Array2D::Array2D(Mat &mat) : width(mat.cols), height(mat.rows) {

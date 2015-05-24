@@ -20,11 +20,14 @@ private:
         static const int LAST_LAYER_NUM = LAYERS_COUNT - 1;
     };
 
+
     static const int LAYER_INPUT = 0;
     static const int LAYER_CONV = 1;
     static const int LAYER_POOL = 2;
     static const int LAYER_NEIRON = 3;
     static const int LAYER_TYPE[SIZES::LAYERS_COUNT];
+
+    const enum Distance { Minimize, Maximize };
 
     class Array2D {
     private:
@@ -59,11 +62,12 @@ private:
 
         vector< Array2D > weights[SIZES::CONV_LAYERS];
     public:
+        Weights();
+
         vector< Array2D > operator [](int i) const { return weights[i]; }
         vector< Array2D > &operator [](int i) { return weights[i]; }
-                
-        Weights();
-        ~Weights();
+
+        void save();
     };
 
     class Visializer {
@@ -76,22 +80,23 @@ private:
     //How does underlay global variable?
     bool isExtractorTrain = false;
     bool isVisualize = false;
-    int trainEpoch = 1;
-    double LEARNING_SPEED = 0.1;
+    int trainEpoch;
+    double LEARNING_SPEED = 0.025;
 
     vector<Array2D> layersMaps[SIZES::LAYERS_COUNT];
-    vector<Array2D> layersMapsDeriv[SIZES::CONV_LAYERS];
-    vector<Array2D> layersMapsError[SIZES::CONV_LAYERS];
+    vector<Array2D> layersMapsDeriv[SIZES::LAYERS_COUNT];
+    vector<Array2D> layersMapsError[SIZES::LAYERS_COUNT];
     Weights weights;
 
     inline double convActiv(double sum);
     inline double convActivDeriv(double sum);
     inline double poolActiv(double sum);
     inline double poolActivDeriv(double sum);
-    inline Rect getPossibleConvPositionsRect(int i, int j,
-                                             int layerEdge, int convEdge);
+    inline Rect getPointLocalFields(int i, int j,
+                                    int layerEdge, int convEdge);
     void conv(Array2D &prevMap, int layerNum, int &mapNum, int convNum);
     void pool(Array2D &prevMap, int layerNum, int mapNum);
+    void backpropagation(Mat &image, vector<double> goal, Distance mode);
 public:
     FeatureExtractor();
 
@@ -99,7 +104,6 @@ public:
 
     vector<double> getVector(Mat &mat);
     vector<double> getVector(Mat &mat, bool visualize);
-    vector<double> backpropagation(Mat &image, vector<double> goal);
-    void train(TrainMode MODE);
+    void train(TrainMode MODE, int trainInterations);
 
 };

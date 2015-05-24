@@ -24,7 +24,7 @@ class NetworkUtils {
         static string loadUrl(string &url);
     public:
         static vector< vector<string> > loadTrainSetMiner();
-        static map<string, vector<string>> loadTestSetLFW();
+        static map<string, vector<string>> loadPairsTestSetLFW();
         static string requestProfilesData(string ids);
         static string requestUserPhotos(string id);
         static void downloadImageAndCache(string imageUrl, string imagePath);
@@ -34,5 +34,4 @@ class NetworkUtils {
         static string getHQImagePath(string fileName);
         static string getLQImagePath(string fileName);
         static string getVisualizerImagePath(string fileName);
-
 };

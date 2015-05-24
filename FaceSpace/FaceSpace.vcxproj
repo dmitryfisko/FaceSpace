@@ -101,7 +101,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Common\common\facedetector.cpp" />
-    <ClCompile Include="main.cpp" />
+    <ClCompile Include="mainUI.cpp" />
     <ClCompile Include="webcam.cpp" />
   </ItemGroup>
   <ItemGroup>
