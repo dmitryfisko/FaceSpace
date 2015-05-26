@@ -1,0 +1,31 @@
+$begin News$$
+$spell
+	cpp
+	randn
+$$
+
+$section The mat2cpp News file$$
+
+$head 2013-07-25$$
+Use 3 standard deviations, instead of two, when checking results
+in $cref/randn C++ example/randn/C++/Example/$$ 
+(because two standard deviations was failing to often).
+
+$head 2013-07-20$$
+Added the $cref mztuni$$ function so that random number generation
+was repeatable on different machines.
+In addition, seeded the random numbers off the clock
+so that a different test is run each time (but can be reproduced
+in the case of an error).
+
+$head 06-05-15$$
+Added $xref/randn/$$ library routine.
+Also added the section $tref library$$ to the documentation.
+
+$head 06-05-05$$
+Added the $xref/cholesky/$$ library routine.
+
+$head 06-04-18$$
+Release of first version.
+
+$end

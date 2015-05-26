@@ -1,0 +1,185 @@
+<?xml version='1.0'?>
+<html xmlns='http://www.w3.org/1999/xhtml'
+      xmlns:math='http://www.w3.org/1998/Math/MathML'
+>
+<head>
+<title>Operations That Have Conversions</title>
+<meta name="description" id="description" content="Operations That Have Conversions"/>
+<meta name="keywords" id="keywords" content=" "/>
+<style type='text/css'>
+body { color : black }
+body { background-color : white }
+A:link { color : blue }
+A:visited { color : purple }
+A:active { color : purple }
+</style>
+<script type='text/javascript' language='JavaScript' src='_operation_xml.js'>
+</script>
+</head>
+<body>
+<table><tr>
+<td>
+<a href="http://www.seanet.com/~bradbell/home.htm" target="_top"><img border="0" src="_image.gif"/></a>
+</td>
+<td><a href="getstarted.xml" target="_top">Prev</a>
+</td><td><a href="elementwise.xml" target="_top">Next</a>
+</td><td>
+<select onchange='choose_across0(this)'>
+<option>Index-&gt;</option>
+<option>contents</option>
+<option>reference</option>
+<option>index</option>
+<option>search</option>
+<option>external</option>
+</select>
+</td>
+<td>
+<select onchange='choose_up0(this)'>
+<option>Up-&gt;</option>
+<option>mat2cpp</option>
+<option>operation</option>
+</select>
+</td>
+<td>
+<select onchange='choose_down1(this)'>
+<option>mat2cpp-&gt;</option>
+<option>License</option>
+<option>getstarted</option>
+<option>operation</option>
+<option>mat2cpp.hpp</option>
+<option>mat2cpp_ok.m</option>
+<option>mat2cpp_ok.cpp</option>
+<option>News</option>
+<option>library</option>
+<option>mztuni</option>
+</select>
+</td>
+<td>
+<select onchange='choose_down0(this)'>
+<option>operation-&gt;</option>
+<option>elementwise</option>
+<option>matrixwise</option>
+<option>scalar_valued</option>
+<option>other</option>
+</select>
+</td>
+<td>
+<select onchange='choose_current0(this)'>
+<option>Headings-&gt;</option>
+<option>Grouped by Type</option>
+<option>Contents</option>
+<option>Alphabetical Order</option>
+</select>
+</td>
+</tr></table><br/>
+
+
+<center><b><big><big>Operations That Have Conversions</big></big></b></center>
+<br/>
+<b><big><a name="Grouped by Type" id="Grouped by Type">Grouped by Type</a></big></b>
+
+<br/>
+<br/>
+<b><big><a name="Contents" id="Contents">Contents</a></big></b>
+<br/>
+<table>
+<tr><td><a href="elementwise.xml" target="_top">elementwise</a></td><td>Elementwise&#xA0;Operations</td></tr><tr><td><a href="matrixwise.xml" target="_top">matrixwise</a></td><td>Matrixwise&#xA0;Operations</td></tr><tr><td><a href="scalar_valued.xml" target="_top">scalar_valued</a></td><td>Scalar&#xA0;Valued&#xA0;Operations</td></tr><tr><td><a href="other.xml" target="_top">other</a></td><td>Other&#xA0;Operations</td></tr></table><br/>
+<b><big><a name="Alphabetical Order" id="Alphabetical Order">Alphabetical Order</a></big></b>
+
+<table><tr><td align='left'  valign='top'>
+
+<a href="add.xml" target="_top">add</a></td><td>
+Elementwise Addition</td></tr>
+<tr><td>
+
+<a href="cholesky.xml" target="_top">cholesky</a></td><td>
+Cholesky Factor a Matrix Division</td></tr>
+<tr><td>
+
+<a href="diag_prod.xml" target="_top">diag_prod</a></td><td>
+Diagonal Matrix Product with General Matrix</td></tr>
+<tr><td>
+
+<a href="element_div.xml" target="_top">element_div</a></td><td>
+Elementwise Division</td></tr>
+<tr><td>
+
+<a href="element_prod.xml" target="_top">element_prod</a></td><td>
+Elementwise Product</td></tr>
+<tr><td>
+
+<a href="element_unary.xml" target="_top">element_unary</a></td><td>
+Matlab or Octave Elementwise Unary Functions</td></tr>
+<tr><td>
+
+<a href="extend.xml" target="_top">extend</a></td><td>
+Extending a Vector</td></tr>
+<tr><td>
+
+<a href="matrix_div.xml" target="_top">matrix_div</a></td><td>
+Matrix Division</td></tr>
+<tr><td>
+
+<a href="matrix_prod.xml" target="_top">matrix_prod</a></td><td>
+Matrix Product</td></tr>
+<tr><td>
+
+<a href="max.xml" target="_top">max</a></td><td>
+Maximum Element of a Matrix</td></tr>
+<tr><td>
+
+<a href="min.xml" target="_top">min</a></td><td>
+Minimum Element of a Matrix</td></tr>
+<tr><td>
+
+<a href="ones.xml" target="_top">ones</a></td><td>
+Matrix of Ones</td></tr>
+<tr><td>
+
+<a href="rand.xml" target="_top">rand</a></td><td>
+Uniform Random Matrix</td></tr>
+<tr><td>
+
+<a href="randn.xml" target="_top">randn</a></td><td>
+Normal Random Matrix</td></tr>
+<tr><td>
+
+<a href="scalar_div.xml" target="_top">scalar_div</a></td><td>
+Scalar Division</td></tr>
+<tr><td>
+
+<a href="scalar_prod.xml" target="_top">scalar_prod</a></td><td>
+Scalar Product</td></tr>
+<tr><td>
+
+<a href="size.xml" target="_top">size</a></td><td>
+Matrix Size</td></tr>
+<tr><td>
+
+<a href="slice.xml" target="_top">slice</a></td><td>
+Matrix Slices</td></tr>
+<tr><td>
+
+<a href="sub.xml" target="_top">sub</a></td><td>
+Elementwise Subtraction</td></tr>
+<tr><td>
+
+<a href="sum.xml" target="_top">sum</a></td><td>
+Sum The Elements of a Matlab</td></tr>
+<tr><td>
+
+<a href="transpose.xml" target="_top">transpose</a></td><td>
+Matrix Transpose</td></tr>
+<tr><td>
+
+<a href="zeros.xml" target="_top">zeros</a></td><td>
+Matrix of Zeros</td></tr>
+<tr><td>
+
+</td></tr>
+</table>
+
+<hr/>Input File: omh/operation.omh
+
+</body>
+</html>
