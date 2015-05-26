@@ -20,7 +20,7 @@ FeatureExtractor::Weights::Weights() {
         int layerMaps = CONV_LAYER_MAPS[layer];
         int convEdge = CONV_LAYER_EDGE[layer];
         for (int map = 0; map < layerMaps; ++map) {
-            weights[layer].push_back(Array2D(convEdge, convEdge, true));
+            weights[layer].push_back( Array2D(convEdge, convEdge, true) );
             //??? how does push or assign objet to vector without copy constructor
         }
     }

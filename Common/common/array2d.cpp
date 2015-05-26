@@ -28,13 +28,9 @@ FeatureExtractor::Array2D::Array2D(int width,
     data = new double[len];
     //Does use srand in constructor or from called function?
     
-    bias = ((double) rand() / RAND_MAX * 2 - 1) / 3;
-    for (int i = 0; i < len; ++i) {
-        if (randomize) {
-            *(data + i) = ((double) rand() / RAND_MAX * 2 - 1);
-        }
+    if (randomize) {
+        randn();
     }
-    //normalize();
 }
 
 FeatureExtractor::Array2D::Array2D(Mat &mat) : width(mat.cols), height(mat.rows) {
@@ -50,6 +46,49 @@ FeatureExtractor::Array2D::Array2D(Mat &mat) : width(mat.cols), height(mat.rows)
             set(i, j, ((double)pixelPtr[i*width + j] - 128) / 255);
         }
     }
+}
+
+void FeatureExtractor::Array2D::randn() {
+    // use formula 30.3 of Statistical Distributions (3rd ed)
+    // Merran Evans, Nicholas Hastings, and Brian Peacock
+    int len = width * height + 2;
+    double *random = new double[len];
+    for (int i = 0; i < len; ++i) {
+        *(random + i) = (double)std::rand() / RAND_MAX;
+    }
+
+    double pi = 4. * std::atan(1.);
+    double square, amp, angle;
+    size_t k = 0;
+    for (size_t i = 0; i < height; i++) {
+        for (size_t j = 0; j < width; j++) {
+            if (k % 2 == 0) {
+                square = -2. * std::log(random[k]);
+                if (square < 0.) {
+                    square = 0.;
+                }
+                amp = sqrt(square);
+                angle = 2. * pi * random[k+1];
+                set(i, j, amp * std::sin(angle));
+            } else {
+                set(i, j, amp * std::cos(angle));
+            }
+            k++;
+        }
+    }
+    if (k % 2 == 0) {
+        square = -2. * std::log(random[k]);
+        if (square < 0.) {
+            square = 0.;
+        }
+        amp = sqrt(square);
+        angle = 2. * pi * random[k + 1];
+        setBias(amp * std::sin(angle));
+    } else {
+        setBias(amp * std::cos(angle));
+    }
+
+    delete []random;
 }
 
 void FeatureExtractor::Array2D::normalize() {
@@ -123,6 +162,10 @@ void FeatureExtractor::Array2D::set(int x, int y, double val) {
 
 void FeatureExtractor::Array2D::add(int x, int y, double val) {
     *(data + height*x + y) += val;
+}
+
+void FeatureExtractor::Array2D::addBias(double delta) {
+    bias += delta;
 }
 
 FeatureExtractor::Array2D::~Array2D() {

@@ -3,13 +3,17 @@
 #include <common/classifier.h>
 #include "tests.h"
 #include <iostream>
+#include <ctime>
 
 int main() {
     //ImageMiner miner;
     //miner.mine();
 
+    size_t backpropagationStartTime = clock();
     FeatureExtractor extractor;
-    extractor.train(FeatureExtractor::TrainMode::Continue, 1000);
+    extractor.train(FeatureExtractor::TrainMode::New, 1000);
+    cout << "Algorithm worked for 10000 interations " << clock() - backpropagationStartTime << "ms" << endl;
+
     //Mat durov = imread("d:\\X\\FaceSpace\\Datasets\\imageminer\\faces_hq\\1\\face_1.jpg", -1);
     //extractor.getVector(durov, true);
     //Classifier classifier;
@@ -18,11 +22,10 @@ int main() {
     //FILE *stream;
     //freopen_s(&stream, "out.txt", "w", stdout);
     //how does name this test?
+    size_t testStartTime = clock();
     Tests::outputResultPairsLFW();
-    //57.4 
-    //57.6 LEARNING_SPEED=0.01
-    //57.7 LEARNING_SPEED=0.05
-    //55.9 LEARNING_SPEED=0.2
+    cout << "Test worked for " << clock() - testStartTime << "ms" << endl;
+    //60.1 10000
 
     return 0;
 }

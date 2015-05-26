@@ -38,7 +38,8 @@ double FeatureExtractor::convActiv(double sum) {
 }
 
 double FeatureExtractor::convActivDeriv(double sum) {
-    return 1 - sqr( tanh(sum) );
+    double _tanh = tanh(sum);
+    return 1 - sqr(_tanh);
 }
 
 double FeatureExtractor::poolActiv(double sum) {
@@ -69,11 +70,11 @@ void FeatureExtractor::conv(Array2D &prevMap, int layerNum, int &mapNum, int con
                     }
                 }
                 sum += weight.getBias();
-                double activation = convActiv(sum);
-                double derivative = convActivDeriv(sum);
-
-                convMap.set(i, j, activation);
-                derivMap.set(i, j, derivative);
+                convMap.set(i, j, convActiv(sum));
+                
+                if (isExtractorTrain) {
+                    derivMap.set(i, j, convActivDeriv(sum));
+                }
             }
         }
         
@@ -286,6 +287,11 @@ void FeatureExtractor::backpropagation(Mat &image, vector<double> goal,
                                 weight.add(k, t, delta);
                             }
                         }
+                        double delta = LEARNING_SPEED *
+                            learningMode *
+                            errorMap.at(i, j) *
+                            derivMap.at(i, j);
+                        weight.addBias(delta);
                     }
                 }
                 ++mapNum;
@@ -324,13 +330,19 @@ void FeatureExtractor::train(TrainMode MODE, int trainInterations) {
         Mat image2 = imread(people[humanNum][photoNum2].c_str(), CV_LOAD_IMAGE_UNCHANGED);
         Mat difImage = imread(people[difHumanNum][difPhotoNum].c_str(), CV_LOAD_IMAGE_UNCHANGED);
         Classifier classifier;
-        //double imagePrevDifMin = classifier.getDif(getVector(image1), getVector(image2));
-        //double imagePrevDifMax = classifier.getDif(getVector(image1), getVector(difImage));
         vector<double> goal = getVector(image1);
+        //double imagePrevDifMin = classifier.getDif(getVector(image1), getVector(image2));
         backpropagation(image2, goal, Distance::Minimize);
-        backpropagation(difImage, goal, Distance::Maximize);
         //double imageDifMin = classifier.getDif(getVector(image1), getVector(image2));
+        //double imagePrevDifMax = classifier.getDif(getVector(image1), getVector(difImage));
+        backpropagation(difImage, goal, Distance::Maximize);
         //double imageDifMax = classifier.getDif(getVector(image1), getVector(difImage));
+
+        //if (imagePrevDifMin <= imageDifMin) {
+        //    int i = 0;
+        //    i++;
+        //}
+
 
         ++trainEpoch;
         if (trainEpoch >= maxTrainSetSize) {

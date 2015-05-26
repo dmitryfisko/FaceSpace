@@ -35,6 +35,8 @@ private:
         double bias;
         int width;
         int height;
+
+        void randn();
     public:
         Array2D(const Array2D &prev);
         Array2D(Mat &mat);
@@ -49,6 +51,7 @@ private:
         double getBias();
         void fill(double val);
         void setBias(double val);
+        void addBias(double delta);
         double at(int x, int y);
         void set(int x, int y, double val);
         void add(int x, int y, double val);
@@ -81,7 +84,7 @@ private:
     bool isExtractorTrain = false;
     bool isVisualize = false;
     int trainEpoch;
-    double LEARNING_SPEED = 0.025;
+    double LEARNING_SPEED = 0.05;
 
     vector<Array2D> layersMaps[SIZES::LAYERS_COUNT];
     vector<Array2D> layersMapsDeriv[SIZES::LAYERS_COUNT];

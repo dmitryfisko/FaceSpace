@@ -65,21 +65,21 @@ void Tests::outputResultPairsLFW() {
 
     double bestResult = -1;
     double bestThreshold;
-    for (double threshold = 0; threshold < maxSimularity * accuracy; ++threshold) {
-        double curThreshold = threshold / accuracy;
+    for (int i = 0; i < simularity.size() * 2; ++i) {
+        double curThreshold = simularity[i / 2] + 0.00001 * (i % 2 ? 1 : -1);
         int correct = 0;
         int incorrect = 0;
         // simular pairs
-        for (int i = 0; i < testPairs; ++i) {
-            if (simularity[i] <= curThreshold) {
+        for (int j = 0; j < testPairs; ++j) {
+            if (simularity[j] <= curThreshold) {
                 ++correct;
             } else {
                 ++incorrect;
             }
         }
         // different pairs
-        for (int i = testPairs; i < testPairs * 2; ++i) {
-            if (simularity[i] > curThreshold) {
+        for (int j = testPairs; j < testPairs * 2; ++j) {
+            if (simularity[j] > curThreshold) {
                 ++correct;
             } else {
                 ++incorrect;
@@ -91,6 +91,5 @@ void Tests::outputResultPairsLFW() {
             bestThreshold = curThreshold;
         }
     }
-        
     cout << "LFW Pairs result " << bestResult * 100 << "% when threshold " << bestThreshold;
 }
