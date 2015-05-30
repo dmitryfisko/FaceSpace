@@ -14,7 +14,7 @@ const int FeatureExtractor::LAYER_TYPE[SIZES::LAYERS_COUNT] = { LAYER_INPUT,
                                                LAYER_CONV, LAYER_POOL, 
                                                LAYER_CONV, LAYER_POOL, 
                                                LAYER_CONV, LAYER_POOL, 
-                                               LAYER_NEIRON };
+                                               LAYER_SOFTMAX };
 const int FeatureExtractor::SIZES::LAYER_EDGE[SIZES::LAYERS_COUNT] = { 68, 64, 32, 28, 14, 10, 5, 1 };
 const int FeatureExtractor::SIZES::LAYER_MAPS[SIZES::LAYERS_COUNT] = { 1, 8, 8, 32, 32, 128, 128, 128 };
 const int FeatureExtractor::SIZES::CONV_MAPS[SIZES::CONV_LAYERS] = { 8, 4, 4, 1};
@@ -70,13 +70,43 @@ void FeatureExtractor::conv(Array2D &prevMap, int layerNum, int &mapNum, int con
                     }
                 }
                 sum += weight.getBias();
-                convMap.set(i, j, convActiv(sum));
+                if (LAYER_TYPE[layerNum] == LAYER_CONV) {
+                    convMap.set(i, j, convActiv(sum));
+                } else {
+                    convMap.set(i, j, exp(sum));
+                }
                 
                 if (isExtractorTrain) {
-                    derivMap.set(i, j, convActivDeriv(sum));
+                    if (LAYER_TYPE[layerNum] == LAYER_CONV) {
+                        derivMap.set(i, j, convActivDeriv(sum));
+                    }
                 }
             }
         }
+
+        /*if (LAYER_TYPE[layerNum] == LAYER_SOFTMAX) {
+            double convAllSum = 0;
+            for (int i = 0; i < layerEdge; ++i) {
+                for (int j = 0; j < layerEdge; ++j) {
+                    convAllSum += convMap.at(i, j);
+                }
+            }
+
+            for (int i = 0; i < layerEdge; ++i) {
+                for (int j = 0; j < layerEdge; ++j) {
+                    convMap.set(i, j, convMap.at(i, j) / convAllSum);
+                }
+            }
+
+            if (isExtractorTrain) {
+                for (int i = 0; i < layerEdge; ++i) {
+                    for (int j = 0; j < layerEdge; ++j) {
+                        double y = convMap.at(i, j);
+                        derivMap.set(i, j, y * (1 - y));
+                    }
+                }
+            }
+        }*/
         
         ++mapNum;
     }
@@ -138,7 +168,7 @@ vector<double> FeatureExtractor::getVector(Mat &image) {
         int prevLayerMaps = SIZES::LAYER_MAPS[layer - 1];
         
         if (LAYER_TYPE[layer] == LAYER_CONV ||
-                LAYER_TYPE[layer] == LAYER_NEIRON) {
+                LAYER_TYPE[layer] == LAYER_SOFTMAX) {
             int mapNum = 0;
             for (int map = 0; map < prevLayerMaps; ++map) {
                 conv(layersMaps[layer - 1][map], layer, mapNum, convNum);
@@ -150,17 +180,35 @@ vector<double> FeatureExtractor::getVector(Mat &image) {
             }
         }
     }
-
     
     if (isVisualize) {
         Visializer visualizer;
         visualizer.show(layersMaps);
     }
 
-    vector<double> ans;
+    int lastLayerNum = SIZES::LAST_LAYER_NUM;
+    if (LAYER_TYPE[lastLayerNum] == LAYER_SOFTMAX) {
+        int layerMaps = SIZES::LAYER_MAPS[SIZES::LAST_LAYER_NUM];
+        double softmaxAllSum = 0;
+        for (int map = 0; map < layerMaps; ++map) {
+            Array2D &convMap = layersMaps[lastLayerNum][map];
+            softmaxAllSum += convMap.at(0, 0);
+        }
+        for (int map = 0; map < layerMaps; ++map) {
+            Array2D &convMap = layersMaps[lastLayerNum][map];
+            convMap.set(0, 0, convMap.at(0, 0) / softmaxAllSum);
+        }
+        for (int map = 0; map < layerMaps; ++map) {
+            Array2D &convMap = layersMaps[lastLayerNum][map];
+            Array2D &derivMap = layersMapsDeriv[lastLayerNum][map];
+            double y = convMap.at(0, 0);
+            derivMap.set(0, 0, y * (1 - y));
+        }
+    }
     // Does layers[lastLayerNum].size() cashing by compiler?
-    for (unsigned int i = 0; i < layersMaps[SIZES::LAST_LAYER_NUM].size(); ++i) {
-        ans.push_back(layersMaps[SIZES::LAST_LAYER_NUM][i].at(0, 0));
+    vector<double> ans;
+    for (unsigned int i = 0; i < layersMaps[lastLayerNum].size(); ++i) {
+        ans.push_back(layersMaps[lastLayerNum][i].at(0, 0));
     }
     //normalizeVector(ans);
 
@@ -211,11 +259,11 @@ void FeatureExtractor::backpropagation(Mat &image, vector<double> goal,
     if (mode == Distance::Maximize) {
         for (int i = 0; i < goal.size(); ++i) {
             double randSign = (double)rand() / RAND_MAX * 2 - 1;
-            if (randSign >= 0) {
+            //if (randSign >= 0) {
                 goal[i] = 1 - goal[i];
-            } else {
-                goal[i] = -1 - goal[i];
-            }
+            //} else {
+            //    goal[i] = -1 - goal[i];
+            //}
         }
     }
     
@@ -252,7 +300,7 @@ void FeatureExtractor::backpropagation(Mat &image, vector<double> goal,
         }
 
         if (LAYER_TYPE[layer + 1] == LAYER_CONV || 
-                LAYER_TYPE[layer + 1] == LAYER_NEIRON) {
+                LAYER_TYPE[layer + 1] == LAYER_SOFTMAX) {
             int convEdge = SIZES::CONV_EDGE[convNum];
             int convMaps = SIZES::CONV_MAPS[convNum];
             int mapNum = 0;
@@ -286,7 +334,7 @@ void FeatureExtractor::backpropagation(Mat &image, vector<double> goal,
     convNum = 0;
     for (int layer = 1; layer < SIZES::LAYERS_COUNT; ++layer) {
         if (LAYER_TYPE[layer] != LAYER_CONV &&
-                LAYER_TYPE[layer] != LAYER_NEIRON) {
+                LAYER_TYPE[layer] != LAYER_SOFTMAX) {
             continue;
         }
         int prevLayerMaps = SIZES::LAYER_MAPS[layer - 1];
@@ -353,13 +401,14 @@ void FeatureExtractor::train(TrainMode MODE, int trainInterations) {
             continue;
         }
 
+        //lerning rate at begining is 0.05
+        learningRate = (pi / 2 - atan(trainEpoch / 500)) / 32; // 16 = 0.1
+
         Mat image1 = imread(people[humanNum][photoNum1].c_str(), CV_LOAD_IMAGE_UNCHANGED);
         Mat image2 = imread(people[humanNum][photoNum2].c_str(), CV_LOAD_IMAGE_UNCHANGED);
         Mat difImage = imread(people[difHumanNum][difPhotoNum].c_str(), CV_LOAD_IMAGE_UNCHANGED);
         vector<double> goal = getVector(image1);
         //double imagePrevDifMax = classifier.getDif(getVector(image1), getVector(difImage));
-        //lerning rate at begining is 0.1
-        learningRate = (pi / 2 - atan(trainEpoch / 5000)) / 32; // 16 = 0.1
         backpropagation(difImage, goal, Distance::Maximize);
         //double imageDifMax = classifier.getDif(getVector(image1), getVector(difImage));
         //double imagePrevDifMin = classifier.getDif(getVector(image1), getVector(image2));

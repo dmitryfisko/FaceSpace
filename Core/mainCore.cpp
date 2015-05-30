@@ -11,7 +11,7 @@ int main() {
 
     size_t backpropagationStartTime = clock();
     FeatureExtractor extractor;
-    extractor.train(FeatureExtractor::TrainMode::New, 1000);
+    extractor.train(FeatureExtractor::TrainMode::Continue, 5000);
     cout << "Algorithm worked for 20000 interations " << clock() - backpropagationStartTime << "ms" << endl;
 
     //Mat durov = imread("d:\\X\\FaceSpace\\Datasets\\imageminer\\faces_hq\\1\\face_1.jpg", -1);

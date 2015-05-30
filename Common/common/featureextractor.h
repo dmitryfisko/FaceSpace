@@ -24,7 +24,7 @@ private:
     static const int LAYER_INPUT = 0;
     static const int LAYER_CONV = 1;
     static const int LAYER_POOL = 2;
-    static const int LAYER_NEIRON = 3;
+    static const int LAYER_SOFTMAX = 3;
     static const int LAYER_TYPE[SIZES::LAYERS_COUNT];
 
     const enum Distance { Minimize, Maximize };
