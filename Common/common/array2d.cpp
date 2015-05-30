@@ -29,7 +29,15 @@ FeatureExtractor::Array2D::Array2D(int width,
     //Does use srand in constructor or from called function?
     
     if (randomize) {
+        //bias = ((double)rand() / RAND_MAX * 2 - 1) / 10;
+        //for (int i = 0; i < len; ++i) {
+        //    if (randomize) {
+        //        *(data + i) = ((double)rand() / RAND_MAX * 2 - 1) / 10;
+        //    }
+        //}
         randn();
+    } else {
+        fill(0.01);
     }
 }
 
@@ -51,7 +59,7 @@ FeatureExtractor::Array2D::Array2D(Mat &mat) : width(mat.cols), height(mat.rows)
 void FeatureExtractor::Array2D::randn() {
     // use formula 30.3 of Statistical Distributions (3rd ed)
     // Merran Evans, Nicholas Hastings, and Brian Peacock
-    int len = width * height + 2;
+    int len = width * height + 1;
     double *random = new double[len];
     for (int i = 0; i < len; ++i) {
         *(random + i) = (double)std::rand() / RAND_MAX;
@@ -60,15 +68,15 @@ void FeatureExtractor::Array2D::randn() {
     double pi = 4. * std::atan(1.);
     double square, amp, angle;
     size_t k = 0;
-    for (size_t i = 0; i < height; i++) {
-        for (size_t j = 0; j < width; j++) {
+    for (size_t i = 0; i < height; ++i) {
+        for (size_t j = 0; j < width; ++j) {
             if (k % 2 == 0) {
                 square = -2. * std::log(random[k]);
                 if (square < 0.) {
                     square = 0.;
                 }
                 amp = sqrt(square);
-                angle = 2. * pi * random[k+1];
+                angle = 2. * pi * random[k + 1];
                 set(i, j, amp * std::sin(angle));
             } else {
                 set(i, j, amp * std::cos(angle));
@@ -87,7 +95,7 @@ void FeatureExtractor::Array2D::randn() {
     } else {
         setBias(amp * std::cos(angle));
     }
-
+    
     delete []random;
 }
 
@@ -146,6 +154,7 @@ void FeatureExtractor::Array2D::fill(double val) {
     for (int i = 0; i < len; ++i) {
         *(data + i) = val;
     }
+    bias = val;
 }
 
 void FeatureExtractor::Array2D::setBias(double val) {

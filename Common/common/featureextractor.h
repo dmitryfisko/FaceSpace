@@ -71,6 +71,7 @@ private:
         vector< Array2D > &operator [](int i) { return weights[i]; }
 
         void save();
+        void save(int num);
     };
 
     class Visializer {
@@ -84,7 +85,7 @@ private:
     bool isExtractorTrain = false;
     bool isVisualize = false;
     int trainEpoch;
-    double LEARNING_SPEED = 0.05;
+    double learningRate;
 
     vector<Array2D> layersMaps[SIZES::LAYERS_COUNT];
     vector<Array2D> layersMapsDeriv[SIZES::LAYERS_COUNT];
@@ -97,6 +98,7 @@ private:
     inline double poolActivDeriv(double sum);
     inline Rect getPointLocalFields(int i, int j,
                                     int layerEdge, int convEdge);
+    void normalizeVector(vector<double> &v);
     void conv(Array2D &prevMap, int layerNum, int &mapNum, int convNum);
     void pool(Array2D &prevMap, int layerNum, int mapNum);
     void backpropagation(Mat &image, vector<double> goal, Distance mode);

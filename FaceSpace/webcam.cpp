@@ -39,6 +39,8 @@ HBITMAP WebCam::getBitmap() {
 
 DWORD WINAPI WebCam::readerThreadProc(HANDLE handle) {
     capture = cvCaptureFromCAM(0);
+    //capture = cvCaptureFromFile("http:\\192.168.43.1");
+    
     for (; isRun;) {
         IplImage *tempFrame = cvQueryFrame(capture);
         if (tempFrame && (tempFrame->height > 0 && tempFrame->width > 0)) {

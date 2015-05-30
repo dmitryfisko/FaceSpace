@@ -3,6 +3,7 @@
 
 #include <fstream>
 #include <time.h>
+#include <../Core/tests.h>
 
 FeatureExtractor::Weights::Weights() {
     int convNum = 0;
@@ -60,7 +61,16 @@ FeatureExtractor::Weights::Weights() {
 }
 
 void FeatureExtractor::Weights::save() {
-    ofstream out("weights.dat");
+    save(-1);
+}
+
+void FeatureExtractor::Weights::save(int num) {
+    string s = "weights.dat";
+    if (num >= 0) {
+        s += " " + to_string(num) + " " 
+            + to_string(Tests::outputResultPairsLFW());
+    }
+    ofstream out(s);
     if (!out) {
         return;
     }

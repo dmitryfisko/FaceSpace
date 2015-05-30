@@ -12,7 +12,7 @@ int main() {
     size_t backpropagationStartTime = clock();
     FeatureExtractor extractor;
     extractor.train(FeatureExtractor::TrainMode::New, 1000);
-    cout << "Algorithm worked for 10000 interations " << clock() - backpropagationStartTime << "ms" << endl;
+    cout << "Algorithm worked for 20000 interations " << clock() - backpropagationStartTime << "ms" << endl;
 
     //Mat durov = imread("d:\\X\\FaceSpace\\Datasets\\imageminer\\faces_hq\\1\\face_1.jpg", -1);
     //extractor.getVector(durov, true);
@@ -24,8 +24,8 @@ int main() {
     //how does name this test?
     size_t testStartTime = clock();
     Tests::outputResultPairsLFW();
-    cout << "Test worked for " << clock() - testStartTime << "ms" << endl;
-    //60.1 10000
+    cout << "Test worked for " << clock() - testStartTime << " ms" << endl;
+    //55.3 10000
 
     return 0;
 }

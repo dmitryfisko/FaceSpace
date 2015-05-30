@@ -12,5 +12,5 @@ private:
     static void normalizeImage(Mat &mat);
     static void displayNearestImages(Mat &mat, string &nearestImagePath);
 public:
-    static void outputResultPairsLFW();
+    static double outputResultPairsLFW();
 };

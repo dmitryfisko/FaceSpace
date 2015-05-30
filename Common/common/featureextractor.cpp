@@ -100,6 +100,22 @@ void FeatureExtractor::pool(Array2D &prevMap, int layerNum, int mapNum) {
     }
 }
 
+void FeatureExtractor::normalizeVector(vector<double> &v) {
+    int len = v.size();
+    double sum = 0;
+    for (int i = 0; i < len; ++i) {
+        sum += v[i] * v[i];
+    }
+    double scale = sqrt(sum);
+    if (scale == 0) {
+        return;
+    }
+
+    for (int i = 0; i < len; ++i) {
+        v[i] /= scale;
+    }
+}
+
 vector<double> FeatureExtractor::getVector(Mat &mat, bool visualize) {
     isVisualize = visualize;
     vector<double> &ans = getVector(mat);
@@ -146,6 +162,7 @@ vector<double> FeatureExtractor::getVector(Mat &image) {
     for (unsigned int i = 0; i < layersMaps[SIZES::LAST_LAYER_NUM].size(); ++i) {
         ans.push_back(layersMaps[SIZES::LAST_LAYER_NUM][i].at(0, 0));
     }
+    //normalizeVector(ans);
 
     return ans;
 }
@@ -191,7 +208,17 @@ Rect FeatureExtractor::getPointLocalFields(int i, int j,
 void FeatureExtractor::backpropagation(Mat &image, vector<double> goal,
                                        Distance mode) {
     vector<double> response = getVector(image);
-
+    if (mode == Distance::Maximize) {
+        for (int i = 0; i < goal.size(); ++i) {
+            double randSign = (double)rand() / RAND_MAX * 2 - 1;
+            if (randSign >= 0) {
+                goal[i] = 1 - goal[i];
+            } else {
+                goal[i] = -1 - goal[i];
+            }
+        }
+    }
+    
     int convNum = SIZES::CONV_LAYERS - 1;
     for (int layer = SIZES::LAST_LAYER_NUM; layer >= 0; --layer) {
         int layerMaps = SIZES::LAYER_MAPS[layer];
@@ -257,7 +284,6 @@ void FeatureExtractor::backpropagation(Mat &image, vector<double> goal,
     }
 
     convNum = 0;
-    double learningMode = mode == Distance::Minimize ? -1 : 1;
     for (int layer = 1; layer < SIZES::LAYERS_COUNT; ++layer) {
         if (LAYER_TYPE[layer] != LAYER_CONV &&
                 LAYER_TYPE[layer] != LAYER_NEIRON) {
@@ -279,16 +305,15 @@ void FeatureExtractor::backpropagation(Mat &image, vector<double> goal,
                     for (int j = 0; j < layerEdge; ++j) {
                         for (int k = 0; k < convEdge; ++k) {
                             for (int t = 0; t < convEdge; ++t) {
-                                double delta = LEARNING_SPEED * 
-                                    learningMode * 
+                                double delta = (-1) * learningRate *
                                     prevMap.at(i + k, j + t) *
                                     errorMap.at(i, j) * 
                                     derivMap.at(i, j);
                                 weight.add(k, t, delta);
                             }
                         }
-                        double delta = LEARNING_SPEED *
-                            learningMode *
+                        double delta = (-1) * learningRate *
+                            prevMap.at(i, j) *
                             errorMap.at(i, j) *
                             derivMap.at(i, j);
                         weight.addBias(delta);
@@ -309,12 +334,14 @@ void FeatureExtractor::train(TrainMode MODE, int trainInterations) {
     }
     isExtractorTrain = true;
 
-    int maxTrainSetSize = trainInterations;
-    trainEpoch = 0;
-
     vector< vector<string> > people = NetworkUtils::loadTrainSetMiner();
 
+    Classifier classifier;
+    int maxTrainSetSize = trainInterations;
+    double pi = 4. * std::atan(1.);
+
     srand(time(NULL));
+    trainEpoch = 0;
     while (trainEpoch < maxTrainSetSize) {
         int humanNum = rand() % people.size();
         int difHumanNum = rand() % people.size();
@@ -322,31 +349,36 @@ void FeatureExtractor::train(TrainMode MODE, int trainInterations) {
         int photoNum1 = rand() % people[humanNum].size();
         int photoNum2 = rand() % people[humanNum].size();
         int difPhotoNum = rand() % people[difHumanNum].size();
-        if (humanNum != difHumanNum && photoNum1 == photoNum2) {
+        if (humanNum == difHumanNum || photoNum1 == photoNum2) {
             continue;
         }
 
         Mat image1 = imread(people[humanNum][photoNum1].c_str(), CV_LOAD_IMAGE_UNCHANGED);
         Mat image2 = imread(people[humanNum][photoNum2].c_str(), CV_LOAD_IMAGE_UNCHANGED);
         Mat difImage = imread(people[difHumanNum][difPhotoNum].c_str(), CV_LOAD_IMAGE_UNCHANGED);
-        Classifier classifier;
         vector<double> goal = getVector(image1);
+        //double imagePrevDifMax = classifier.getDif(getVector(image1), getVector(difImage));
+        //lerning rate at begining is 0.1
+        learningRate = (pi / 2 - atan(trainEpoch / 5000)) / 32; // 16 = 0.1
+        backpropagation(difImage, goal, Distance::Maximize);
+        //double imageDifMax = classifier.getDif(getVector(image1), getVector(difImage));
         //double imagePrevDifMin = classifier.getDif(getVector(image1), getVector(image2));
         backpropagation(image2, goal, Distance::Minimize);
         //double imageDifMin = classifier.getDif(getVector(image1), getVector(image2));
-        //double imagePrevDifMax = classifier.getDif(getVector(image1), getVector(difImage));
-        backpropagation(difImage, goal, Distance::Maximize);
-        //double imageDifMax = classifier.getDif(getVector(image1), getVector(difImage));
+        
 
-        //if (imagePrevDifMin <= imageDifMin) {
-        //    int i = 0;
-        //    i++;
+        //if (imagePrevDifMin < imageDifMin || imagePrevDifMax > imageDifMax) {
+        //    if ((imagePrevDifMin - imageDifMin < -0.01) || (imagePrevDifMax - imageDifMax > 0.01)) {
+        //        cout << trainEpoch << endl;
+        //    }
         //}
-
 
         ++trainEpoch;
         if (trainEpoch >= maxTrainSetSize) {
             break;
+        }
+        if (trainEpoch % 5000 == 0) {
+            weights.save(trainEpoch / 5000);
         }
     }
 

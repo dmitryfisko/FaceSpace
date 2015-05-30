@@ -24,7 +24,7 @@ void Tests::displayNearestImages(Mat &mat, string &nearestImagePath) {
     cvWaitKey(5000);
 }
 
-void Tests::outputResultPairsLFW() {
+double Tests::outputResultPairsLFW() {
     ifstream in("pairsDevTest.txt");
     map<string, vector<string>> people = NetworkUtils::loadPairsTestSetLFW();
     FeatureExtractor extractor;
@@ -91,5 +91,7 @@ void Tests::outputResultPairsLFW() {
             bestThreshold = curThreshold;
         }
     }
-    cout << "LFW Pairs result " << bestResult * 100 << "% when threshold " << bestThreshold;
+    cout << "LFW Pairs result " << bestResult * 100 << "% when threshold " << bestThreshold << endl;
+
+    return  bestResult * 100;
 }
