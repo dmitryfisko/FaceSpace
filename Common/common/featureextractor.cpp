@@ -8,17 +8,22 @@
 #include <iostream>
 #include <ctime>
 
+// x=[0; 5000] -> y=[0.15; 0.08]
+#define LEARNING_RATE_FUNCT_DECREASE_SPEED 5000
+// 16 is equivalent of function first value 0.1
+#define LEARNING_RATE_FUNCT_COEFFICENT_FUNPARAM 10 
 #define sqr(x) (x)*(x)
 
 const int FeatureExtractor::LAYER_TYPE[SIZES::LAYERS_COUNT] = { LAYER_INPUT,
                                                LAYER_CONV, LAYER_POOL, 
                                                LAYER_CONV, LAYER_POOL, 
                                                LAYER_CONV, LAYER_POOL, 
-                                               LAYER_SOFTMAX };
-const int FeatureExtractor::SIZES::LAYER_EDGE[SIZES::LAYERS_COUNT] = { 68, 64, 32, 28, 14, 10, 5, 1 };
-const int FeatureExtractor::SIZES::LAYER_MAPS[SIZES::LAYERS_COUNT] = { 1, 8, 8, 32, 32, 128, 128, 128 };
-const int FeatureExtractor::SIZES::CONV_MAPS[SIZES::CONV_LAYERS] = { 8, 4, 4, 1};
-const int FeatureExtractor::SIZES::CONV_EDGE[SIZES::CONV_LAYERS] = { 5, 5, 5, 5};
+                                               LAYER_CONV, LAYER_POOL,
+                                               LAYER_CONV, LAYER_FULL_CONNECTED};
+const int FeatureExtractor::SIZES::LAYER_EDGE[SIZES::LAYERS_COUNT] = { 78, 76, 38, 36, 18, 16, 8, 6, 3, 1, 1 };
+const int FeatureExtractor::SIZES::LAYER_MAPS[SIZES::LAYERS_COUNT] = { 1, 8, 8, 64, 64, 256, 256, 1024, 1024, 1024, 128 };
+const int FeatureExtractor::SIZES::CONV_MAPS[SIZES::CONV_LAYERS] = { 8, 8, 4, 4, 1, AUTO };
+const int FeatureExtractor::SIZES::CONV_EDGE[SIZES::CONV_LAYERS] = { 3, 3, 3, 3, 3, AUTO };
 
 FeatureExtractor::FeatureExtractor() {
     for (int layer = 0; layer < SIZES::LAYERS_COUNT; ++layer) {
@@ -27,8 +32,8 @@ FeatureExtractor::FeatureExtractor() {
         Array2D item(layerEdge, layerEdge);
         for (int map = 0; map < layerMaps; ++map) {
             layersMaps[layer].push_back(item);
-            layersMapsError[layer].push_back(item);
             layersMapsDeriv[layer].push_back(item);
+            layersMapsError[layer].push_back(item);
         }
     }
 }
@@ -41,6 +46,15 @@ double FeatureExtractor::convActivDeriv(double sum) {
     double _tanh = tanh(sum);
     return 1 - sqr(_tanh);
 }
+
+double FeatureExtractor::normL2Activ(double val) {
+    return val * val;
+}
+
+double FeatureExtractor::normL2ActivDeriv(double val) {
+    return 2 * val;
+}
+
 
 double FeatureExtractor::poolActiv(double sum) {
     return sum / 4;
@@ -70,47 +84,46 @@ void FeatureExtractor::conv(Array2D &prevMap, int layerNum, int &mapNum, int con
                     }
                 }
                 sum += weight.getBias();
-                if (LAYER_TYPE[layerNum] == LAYER_CONV) {
-                    convMap.set(i, j, convActiv(sum));
-                } else {
-                    convMap.set(i, j, exp(sum));
-                }
+                convMap.set(i, j, convActiv(sum));
                 
                 if (isExtractorTrain) {
-                    if (LAYER_TYPE[layerNum] == LAYER_CONV) {
-                        derivMap.set(i, j, convActivDeriv(sum));
-                    }
+                    derivMap.set(i, j, convActivDeriv(sum));
                 }
             }
         }
-
-        /*if (LAYER_TYPE[layerNum] == LAYER_SOFTMAX) {
-            double convAllSum = 0;
-            for (int i = 0; i < layerEdge; ++i) {
-                for (int j = 0; j < layerEdge; ++j) {
-                    convAllSum += convMap.at(i, j);
-                }
-            }
-
-            for (int i = 0; i < layerEdge; ++i) {
-                for (int j = 0; j < layerEdge; ++j) {
-                    convMap.set(i, j, convMap.at(i, j) / convAllSum);
-                }
-            }
-
-            if (isExtractorTrain) {
-                for (int i = 0; i < layerEdge; ++i) {
-                    for (int j = 0; j < layerEdge; ++j) {
-                        double y = convMap.at(i, j);
-                        derivMap.set(i, j, y * (1 - y));
-                    }
-                }
-            }
-        }*/
         
         ++mapNum;
     }
 }
+
+void FeatureExtractor::fullConnected(int layerNum, int convNum) {
+    vector<Array2D> &prevLayerMaps = layersMaps[layerNum - 1];
+    vector<Array2D> &layerMaps = layersMaps[layerNum];
+    vector<Array2D> &layerMapsDeriv = layersMapsDeriv[layerNum];
+    int layerMapsSize = layerMaps.size();
+    int prevLayerMapsSize = prevLayerMaps.size();
+
+    for (int mapNum = 0; mapNum < layerMapsSize; ++mapNum) {
+        Array2D &weight = weights[convNum][mapNum];
+        Array2D &convMap = layerMaps[mapNum];
+        Array2D &derivMap = layerMapsDeriv[mapNum];
+
+        double sum = 0;
+        for (int prevMapNum = 0; prevMapNum < prevLayerMapsSize; prevMapNum++) {
+            Array2D &prevMap = prevLayerMaps[prevMapNum];
+            sum += prevMap.at(0, 0) * weight.at(0, prevMapNum);
+        }
+
+        sum += weight.getBias();
+        convMap.set(0, 0, convActiv(sum));
+
+        if (isExtractorTrain) {
+            derivMap.set(0, 0, convActivDeriv(sum));
+        }
+    }
+}
+
+
 
 void FeatureExtractor::pool(Array2D &prevMap, int layerNum, int mapNum) {
     Array2D &poolMap = layersMaps[layerNum][mapNum];
@@ -130,19 +143,16 @@ void FeatureExtractor::pool(Array2D &prevMap, int layerNum, int mapNum) {
     }
 }
 
-void FeatureExtractor::normalizeVector(vector<double> &v) {
-    int len = v.size();
-    double sum = 0;
-    for (int i = 0; i < len; ++i) {
-        sum += v[i] * v[i];
-    }
-    double scale = sqrt(sum);
-    if (scale == 0) {
-        return;
-    }
 
-    for (int i = 0; i < len; ++i) {
-        v[i] /= scale;
+void FeatureExtractor::normL2(int layerNum) {
+    vector<Array2D> &prevLayer = layersMaps[layerNum - 1];
+    vector<Array2D> &layer = layersMaps[layerNum];
+    vector<Array2D> &derivLayer = layersMapsDeriv[layerNum];
+    int mapsNum = SIZES::LAYER_MAPS[layerNum];
+    for (int map = 0; map < mapsNum; ++map) {
+        double y = prevLayer[map].at(0, 0);
+        layer[map].set(0, 0, normL2Activ(y));
+        derivLayer[map].set(0, 0, normL2ActivDeriv(y));
     }
 }
 
@@ -167,8 +177,7 @@ vector<double> FeatureExtractor::getVector(Mat &image) {
     for (int layer = 1; layer < SIZES::LAYERS_COUNT; ++layer) {
         int prevLayerMaps = SIZES::LAYER_MAPS[layer - 1];
         
-        if (LAYER_TYPE[layer] == LAYER_CONV ||
-                LAYER_TYPE[layer] == LAYER_SOFTMAX) {
+        if (LAYER_TYPE[layer] == LAYER_CONV) {
             int mapNum = 0;
             for (int map = 0; map < prevLayerMaps; ++map) {
                 conv(layersMaps[layer - 1][map], layer, mapNum, convNum);
@@ -178,37 +187,24 @@ vector<double> FeatureExtractor::getVector(Mat &image) {
             for (int map = 0; map < prevLayerMaps; ++map) {
                 pool(layersMaps[layer - 1][map], layer, map);
             }
+        } else if (LAYER_TYPE[layer] == LAYER_L2_NORM) {
+            normL2(layer);
+        } else if (LAYER_TYPE[layer] == LAYER_FULL_CONNECTED) {
+            fullConnected(layer, convNum);
+            ++convNum;
         }
     }
+
     
     if (isVisualize) {
         Visializer visualizer;
         visualizer.show(layersMaps);
     }
 
-    int lastLayerNum = SIZES::LAST_LAYER_NUM;
-    if (LAYER_TYPE[lastLayerNum] == LAYER_SOFTMAX) {
-        int layerMaps = SIZES::LAYER_MAPS[SIZES::LAST_LAYER_NUM];
-        double softmaxAllSum = 0;
-        for (int map = 0; map < layerMaps; ++map) {
-            Array2D &convMap = layersMaps[lastLayerNum][map];
-            softmaxAllSum += convMap.at(0, 0);
-        }
-        for (int map = 0; map < layerMaps; ++map) {
-            Array2D &convMap = layersMaps[lastLayerNum][map];
-            convMap.set(0, 0, convMap.at(0, 0) / softmaxAllSum);
-        }
-        for (int map = 0; map < layerMaps; ++map) {
-            Array2D &convMap = layersMaps[lastLayerNum][map];
-            Array2D &derivMap = layersMapsDeriv[lastLayerNum][map];
-            double y = convMap.at(0, 0);
-            derivMap.set(0, 0, y * (1 - y));
-        }
-    }
-    // Does layers[lastLayerNum].size() cashing by compiler?
     vector<double> ans;
-    for (unsigned int i = 0; i < layersMaps[lastLayerNum].size(); ++i) {
-        ans.push_back(layersMaps[lastLayerNum][i].at(0, 0));
+    // Does layers[lastLayerNum].size() cashing by compiler?
+    for (unsigned int i = 0; i < layersMaps[SIZES::LAST_LAYER_NUM].size(); ++i) {
+        ans.push_back(layersMaps[SIZES::LAST_LAYER_NUM][i].at(0, 0));
     }
     //normalizeVector(ans);
 
@@ -258,12 +254,16 @@ void FeatureExtractor::backpropagation(Mat &image, vector<double> goal,
     vector<double> response = getVector(image);
     if (mode == Distance::Maximize) {
         for (int i = 0; i < goal.size(); ++i) {
-            double randSign = (double)rand() / RAND_MAX * 2 - 1;
-            //if (randSign >= 0) {
+            if (LAYER_TYPE[SIZES::LAST_LAYER_NUM] == LAYER_L2_NORM) {
                 goal[i] = 1 - goal[i];
-            //} else {
-            //    goal[i] = -1 - goal[i];
-            //}
+            } else {
+                double randSign = (double)rand() / RAND_MAX * 2 - 1;
+                if (randSign >= 0) {
+                    goal[i] = 1 - goal[i];
+                } else {
+                    goal[i] = -1 - goal[i];
+                }
+            }
         }
     }
     
@@ -277,6 +277,16 @@ void FeatureExtractor::backpropagation(Mat &image, vector<double> goal,
                 layersMapsError[layer][map].set(0, 0, response[map] - goal[map]);
             }
             continue;
+        }
+
+        if (LAYER_TYPE[layer + 1] == LAYER_L2_NORM) {
+            int nextLayerEdge = SIZES::LAYER_EDGE[layer + 1];
+            for (int map = 0; map < layerMaps; map++) {
+                Array2D &derivMap = layersMapsDeriv[layer + 1][map];
+                Array2D &errorMap = layersMapsError[layer + 1][map];
+                double error = errorMap.at(0, 0) * derivMap.at(0, 0);
+                layersMapsError[layer][map].set(0, 0, error);
+            }
         }
 
         if (LAYER_TYPE[layer + 1] == LAYER_POOL) {
@@ -299,8 +309,26 @@ void FeatureExtractor::backpropagation(Mat &image, vector<double> goal,
             }
         }
 
-        if (LAYER_TYPE[layer + 1] == LAYER_CONV || 
-                LAYER_TYPE[layer + 1] == LAYER_SOFTMAX) {
+        if (LAYER_TYPE[layer + 1] == LAYER_FULL_CONNECTED) {
+            vector<Array2D> &nextLayerMapsDeriv = layersMapsDeriv[layer + 1];
+            vector<Array2D> &nextLayerMapsError = layersMapsError[layer + 1];
+            int layerMapsSize = SIZES::LAYER_MAPS[layer];
+            int nextLayerMapsSize = SIZES::LAYER_MAPS[layer + 1];
+
+            for (int mapNum = 0; mapNum < layerMapsSize; ++mapNum) {
+                double error = 0;
+                for (int nextMapNum = 0; nextMapNum < nextLayerMapsSize; nextMapNum++) {
+                    Array2D &weight = weights[convNum][nextMapNum];
+                    error += nextLayerMapsDeriv[nextMapNum].at(0, 0) *
+                        nextLayerMapsError[nextMapNum].at(0, 0) *
+                        weight.at(0, mapNum);
+                }
+                layersMapsError[layer][mapNum].set(0, 0, error);
+            }
+            --convNum;
+        }
+
+        if (LAYER_TYPE[layer + 1] == LAYER_CONV) {
             int convEdge = SIZES::CONV_EDGE[convNum];
             int convMaps = SIZES::CONV_MAPS[convNum];
             int mapNum = 0;
@@ -333,64 +361,91 @@ void FeatureExtractor::backpropagation(Mat &image, vector<double> goal,
 
     convNum = 0;
     for (int layer = 1; layer < SIZES::LAYERS_COUNT; ++layer) {
-        if (LAYER_TYPE[layer] != LAYER_CONV &&
-                LAYER_TYPE[layer] != LAYER_SOFTMAX) {
-            continue;
-        }
-        int prevLayerMaps = SIZES::LAYER_MAPS[layer - 1];
-        int mapNum = 0;
-        for (int map = 0; map < prevLayerMaps; ++map) {
-            int convEdge = SIZES::CONV_EDGE[convNum];
-            int convMaps = SIZES::CONV_MAPS[convNum];
-            int layerEdge = SIZES::LAYER_EDGE[layer];
-            Array2D &prevMap = layersMaps[layer - 1][map];
+        if (LAYER_TYPE[layer] == LAYER_CONV) {
+            int prevLayerMaps = SIZES::LAYER_MAPS[layer - 1];
+            int mapNum = 0;
+            for (int map = 0; map < prevLayerMaps; ++map) {
+                int convEdge = SIZES::CONV_EDGE[convNum];
+                int convMaps = SIZES::CONV_MAPS[convNum];
+                int layerEdge = SIZES::LAYER_EDGE[layer];
+                Array2D &prevMap = layersMaps[layer - 1][map];
 
-            for (int convMapNum = 0; convMapNum < convMaps; ++convMapNum) {
-                Array2D &weight = weights[convNum][mapNum];
-                Array2D &derivMap = layersMapsDeriv[layer][mapNum];
-                Array2D &errorMap = layersMapsError[layer][mapNum];
-                for (int i = 0; i < layerEdge; ++i) {
-                    for (int j = 0; j < layerEdge; ++j) {
-                        for (int k = 0; k < convEdge; ++k) {
-                            for (int t = 0; t < convEdge; ++t) {
-                                double delta = (-1) * learningRate *
-                                    prevMap.at(i + k, j + t) *
-                                    errorMap.at(i, j) * 
-                                    derivMap.at(i, j);
-                                weight.add(k, t, delta);
+                for (int convMapNum = 0; convMapNum < convMaps; ++convMapNum) {
+                    Array2D &weight = weights[convNum][mapNum];
+                    Array2D &derivMap = layersMapsDeriv[layer][mapNum];
+                    Array2D &errorMap = layersMapsError[layer][mapNum];
+                    for (int i = 0; i < layerEdge; ++i) {
+                        for (int j = 0; j < layerEdge; ++j) {
+                            for (int k = 0; k < convEdge; ++k) {
+                                for (int t = 0; t < convEdge; ++t) {
+                                    double delta = (-1) * learningRate *
+                                        prevMap.at(i + k, j + t) *
+                                        errorMap.at(i, j) * 
+                                        derivMap.at(i, j);
+                                    weight.add(k, t, delta);
+                                }
                             }
+                            double delta = (-1) * learningRate *
+                                //prevMap.at(i, j) *
+                                errorMap.at(i, j) *
+                                derivMap.at(i, j);
+                            weight.addBias(delta);
                         }
-                        double delta = (-1) * learningRate *
-                            prevMap.at(i, j) *
-                            errorMap.at(i, j) *
-                            derivMap.at(i, j);
-                        weight.addBias(delta);
                     }
+                    ++mapNum;
                 }
-                ++mapNum;
             }
+            ++convNum;
         }
-        ++convNum;
+        if (LAYER_TYPE[layer] == LAYER_FULL_CONNECTED) {
+            vector<Array2D> &prevLayerMaps = layersMaps[layer - 1];
+            vector<Array2D> &layerMapsDeriv = layersMapsDeriv[layer];
+            vector<Array2D> &layerMapsError = layersMapsError[layer];
+            int layerMapsSize = SIZES::LAYER_MAPS[layer];
+            int prevLayerMapsSize = SIZES::LAYER_MAPS[layer - 1];
+
+            for (int mapNum = 0; mapNum < layerMapsSize; ++mapNum) {
+                Array2D &weight = weights[convNum][mapNum];
+                double derivative = layerMapsDeriv[mapNum].at(0, 0);
+                double error = layerMapsError[mapNum].at(0, 0);
+
+                double sum = 0;
+                for (int prevMapNum = 0; prevMapNum < prevLayerMapsSize; prevMapNum++) {
+                    Array2D &prevMap = prevLayerMaps[prevMapNum];
+                    double delta = (-1) * learningRate *
+                        prevMap.at(0, 0) *
+                        error * derivative;
+                    weight.add(0, prevMapNum, delta);
+                }
+                double delta = (-1) * learningRate *
+                    error * derivative;
+                weight.addBias(delta);
+            }
+            ++convNum;
+        }
+
     }
 }
 
 void FeatureExtractor::train(TrainMode MODE, int trainInterations) {
     if (MODE == TrainMode::New) {
+        NetworkUtils::removeAllWeights();
         remove("weights.dat");
         //memory leak ?
         weights = *(new Weights());
+        weights.save();
     }
     isExtractorTrain = true;
 
     vector< vector<string> > people = NetworkUtils::loadTrainSetMiner();
 
     Classifier classifier;
-    int maxTrainSetSize = trainInterations;
+    int finalTrainEpoch = weights.getTrainEpoch() + trainInterations;
+    //int maxTrainSetSize = trainInterations;
     double pi = 4. * std::atan(1.);
 
     srand(time(NULL));
-    trainEpoch = 0;
-    while (trainEpoch < maxTrainSetSize) {
+    while (weights.getTrainEpoch() < finalTrainEpoch) {
         int humanNum = rand() % people.size();
         int difHumanNum = rand() % people.size();
         
@@ -401,19 +456,20 @@ void FeatureExtractor::train(TrainMode MODE, int trainInterations) {
             continue;
         }
 
-        //lerning rate at begining is 0.05
-        learningRate = (pi / 2 - atan(trainEpoch / 500)) / 32; // 16 = 0.1
+        learningRate = 
+            (pi / 2 - atan(weights.getTrainEpoch() / LEARNING_RATE_FUNCT_DECREASE_SPEED)) /
+            LEARNING_RATE_FUNCT_COEFFICENT_FUNPARAM;
 
         Mat image1 = imread(people[humanNum][photoNum1].c_str(), CV_LOAD_IMAGE_UNCHANGED);
         Mat image2 = imread(people[humanNum][photoNum2].c_str(), CV_LOAD_IMAGE_UNCHANGED);
         Mat difImage = imread(people[difHumanNum][difPhotoNum].c_str(), CV_LOAD_IMAGE_UNCHANGED);
         vector<double> goal = getVector(image1);
-        //double imagePrevDifMax = classifier.getDif(getVector(image1), getVector(difImage));
+        double imagePrevDifMax = classifier.getDif(getVector(image1), getVector(difImage));
         backpropagation(difImage, goal, Distance::Maximize);
-        //double imageDifMax = classifier.getDif(getVector(image1), getVector(difImage));
-        //double imagePrevDifMin = classifier.getDif(getVector(image1), getVector(image2));
+        double imageDifMax = classifier.getDif(getVector(image1), getVector(difImage));
+        double imagePrevDifMin = classifier.getDif(getVector(image1), getVector(image2));
         backpropagation(image2, goal, Distance::Minimize);
-        //double imageDifMin = classifier.getDif(getVector(image1), getVector(image2));
+        double imageDifMin = classifier.getDif(getVector(image1), getVector(image2));
         
 
         //if (imagePrevDifMin < imageDifMin || imagePrevDifMax > imageDifMax) {
@@ -422,12 +478,12 @@ void FeatureExtractor::train(TrainMode MODE, int trainInterations) {
         //    }
         //}
 
-        ++trainEpoch;
-        if (trainEpoch >= maxTrainSetSize) {
+        weights.incTrainEpoch();
+        if (weights.getTrainEpoch() >= finalTrainEpoch) {
             break;
         }
-        if (trainEpoch % 5000 == 0) {
-            weights.save(trainEpoch / 5000);
+        if (weights.getTrainEpoch() % 100 == 0) {
+            weights.save(weights.getTrainEpoch() / 100);
         }
     }
 

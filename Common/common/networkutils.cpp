@@ -14,7 +14,30 @@ const string NetworkUtils::MINE_HQ_IMAGES_FOLDER_PATH = MINE_LQ_FACES_FOLDER_PAT
 const string NetworkUtils::VISUALIZER_FOLDER_PATH = "d:\\X\\FaceSpace\\Datasets\\visualizer\\";
 const string NetworkUtils::TRAIN_MAINER_FOLDER_PATH = MINE_HQ_FACES_FOLDER_PATH;
 const string NetworkUtils::TEST_LFW_FOLDER_PATH = "d:\\X\\FaceSpace\\Datasets\\lfw\\";
+const string NetworkUtils::WEIGHTS_FOLDER_PATH = "d:\\X\\FaceSpace\\Core\\";
 size_t NetworkUtils::prevRequestTime = 0;
+
+void NetworkUtils::removeAllWeights() {
+    struct dirent *ent;
+    DIR *dir = opendir(WEIGHTS_FOLDER_PATH.c_str());
+    assert(dir != NULL);
+
+    while ((ent = readdir(dir)) != NULL) {
+        if (strcmp(ent->d_name, ".") == 0 ||
+            strcmp(ent->d_name, "..") == 0 ||
+            ent->d_type == DT_DIR) {
+            continue;
+        }
+
+        string fileName = ent->d_name;
+        if (fileName.find("weights") != string::npos &&
+            fileName.find(".dat") != string::npos) {
+            remove((WEIGHTS_FOLDER_PATH + fileName).c_str());
+        }
+    }
+
+    closedir(dir);
+}
 
 vector< vector<string> > NetworkUtils::loadTrainSetMiner() {
     vector< vector<string> > trainSet;

@@ -11,10 +11,10 @@ using namespace cv;
 class FeatureExtractor {
 private:
     struct SIZES {
-        static const int LAYERS_COUNT = 8;
+        static const int LAYERS_COUNT = 11;
         static const int LAYER_EDGE[LAYERS_COUNT];
         static const int LAYER_MAPS[LAYERS_COUNT];
-        static const int CONV_LAYERS = 4;
+        static const int CONV_LAYERS = 6;
         static const int CONV_MAPS[CONV_LAYERS];
         static const int CONV_EDGE[CONV_LAYERS];
         static const int LAST_LAYER_NUM = LAYERS_COUNT - 1;
@@ -24,8 +24,10 @@ private:
     static const int LAYER_INPUT = 0;
     static const int LAYER_CONV = 1;
     static const int LAYER_POOL = 2;
-    static const int LAYER_SOFTMAX = 3;
+    static const int LAYER_FULL_CONNECTED = 3;
+    static const int LAYER_L2_NORM = 4;
     static const int LAYER_TYPE[SIZES::LAYERS_COUNT];
+    static const int AUTO = 0;
 
     const enum Distance { Minimize, Maximize };
 
@@ -64,12 +66,15 @@ private:
         int CONV_LAYER_TYPE[SIZES::CONV_LAYERS];
 
         vector< Array2D > weights[SIZES::CONV_LAYERS];
+        int trainEpoch;
     public:
         Weights();
 
         vector< Array2D > operator [](int i) const { return weights[i]; }
         vector< Array2D > &operator [](int i) { return weights[i]; }
 
+        void incTrainEpoch();
+        int getTrainEpoch();
         void save();
         void save(int num);
     };
@@ -84,7 +89,6 @@ private:
     //How does underlay global variable?
     bool isExtractorTrain = false;
     bool isVisualize = false;
-    int trainEpoch;
     double learningRate;
 
     vector<Array2D> layersMaps[SIZES::LAYERS_COUNT];
@@ -94,13 +98,16 @@ private:
 
     inline double convActiv(double sum);
     inline double convActivDeriv(double sum);
+    inline double normL2Activ(double val);
+    inline double normL2ActivDeriv(double val);
     inline double poolActiv(double sum);
     inline double poolActivDeriv(double sum);
     inline Rect getPointLocalFields(int i, int j,
                                     int layerEdge, int convEdge);
-    void normalizeVector(vector<double> &v);
     void conv(Array2D &prevMap, int layerNum, int &mapNum, int convNum);
+    void fullConnected(int layerNum, int convNum);
     void pool(Array2D &prevMap, int layerNum, int mapNum);
+    void normL2(int layerNum);
     void backpropagation(Mat &image, vector<double> goal, Distance mode);
 public:
     FeatureExtractor();

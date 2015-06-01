@@ -29,15 +29,16 @@ FeatureExtractor::Array2D::Array2D(int width,
     //Does use srand in constructor or from called function?
     
     if (randomize) {
-        //bias = ((double)rand() / RAND_MAX * 2 - 1) / 10;
-        //for (int i = 0; i < len; ++i) {
-        //    if (randomize) {
-        //        *(data + i) = ((double)rand() / RAND_MAX * 2 - 1) / 10;
-        //    }
-        //}
-        randn();
+        bias = ((double)rand() / RAND_MAX * 2 - 1) ;
+        for (int i = 0; i < len; ++i) {
+            if (randomize) {
+                *(data + i) = ((double)rand() / RAND_MAX * 2 - 1);
+            }
+        }
+        //randn();
     } else {
         fill(0.01);
+        setBias(0);
     }
 }
 
@@ -59,10 +60,13 @@ FeatureExtractor::Array2D::Array2D(Mat &mat) : width(mat.cols), height(mat.rows)
 void FeatureExtractor::Array2D::randn() {
     // use formula 30.3 of Statistical Distributions (3rd ed)
     // Merran Evans, Nicholas Hastings, and Brian Peacock
-    int len = width * height + 1;
+    int len = width * height + 2;
     double *random = new double[len];
     for (int i = 0; i < len; ++i) {
-        *(random + i) = (double)std::rand() / RAND_MAX;
+        random[i] = (double)std::rand() / RAND_MAX;
+        while (random[i] == 0) {
+            random[i] = (double)std::rand() / RAND_MAX;
+        }
     }
 
     double pi = 4. * std::atan(1.);
@@ -162,15 +166,15 @@ void FeatureExtractor::Array2D::setBias(double val) {
 }
 
 double FeatureExtractor::Array2D::at(int x, int y) {
-    return *(data + height*x + y);
+    return *(data + width * x + y);
 }
 
 void FeatureExtractor::Array2D::set(int x, int y, double val) {
-    *(data + height*x + y) = val;
+    *(data + width * x + y) = val;
 }
 
 void FeatureExtractor::Array2D::add(int x, int y, double val) {
-    *(data + height*x + y) += val;
+    *(data + width * x + y) += val;
 }
 
 void FeatureExtractor::Array2D::addBias(double delta) {

@@ -13,6 +13,7 @@ class NetworkUtils {
         static const string VISUALIZER_FOLDER_PATH;
         static const string TRAIN_MAINER_FOLDER_PATH;
         static const string TEST_LFW_FOLDER_PATH;
+        static const string WEIGHTS_FOLDER_PATH;
         static const int TIME_BEETWEEN_REQUESTS = 334;
 
         struct ResponseHolder;
@@ -23,6 +24,7 @@ class NetworkUtils {
         static void initString(struct ResponseHolder *s);
         static string loadUrl(string &url);
     public:
+        static void removeAllWeights();
         static vector< vector<string> > loadTrainSetMiner();
         static map<string, vector<string>> loadPairsTestSetLFW();
         static string requestProfilesData(string ids);
