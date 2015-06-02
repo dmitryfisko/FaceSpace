@@ -21,6 +21,16 @@ double Classifier::getDif(vector<double> &v1, vector<double> &v2) {
     return sqrt(sum);
 }
 
+double Classifier::tripletLoss(vector<double> &a, vector<double> &p, 
+                               vector<double> &n) {
+    assert(a.size() == p.size() && a.size() == n.size());
+    double loss = 0;
+    for (int i = 0; i < a.size(); ++i) {
+        loss += max(0, sqr(a[i] - p[i]) - sqr(a[i] - n[i]) + 0.2);
+    }
+    return loss / a.size();
+}
+
 __int64 Classifier::getUID(vector<double> &point) {
     __int64 minDistUID = -1;
     __int64 minDistNumber = -1;

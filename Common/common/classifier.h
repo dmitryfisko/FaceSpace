@@ -24,4 +24,6 @@ class Classifier {
         __int64 getUID(vector<double> &point);
         double getDif(vector<double> &v1, vector<double> &v2);
         bool isSame(vector<double> &v1, vector<double> &v2);
+        double tripletLoss(vector<double> &a, vector<double> &p,
+                           vector<double> &n);
 };

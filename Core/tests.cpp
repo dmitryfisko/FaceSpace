@@ -32,8 +32,8 @@ double Tests::outputResultPairsLFW() {
     int testPairs;
 
     in >> testPairs;
-    vector<double> simularity;
-    simularity.reserve(testPairs * 2);
+    vector<double> simularity(testPairs * 2);
+    //simularity.reserve(testPairs * 2);
     for (int i = 0; i < testPairs; ++i) {
         string humanName;
         int imageNum1;
@@ -44,7 +44,7 @@ double Tests::outputResultPairsLFW() {
         vector<double> v1 = extractor.getVector(image1);
         Mat image2 = imread(people[humanName][imageNum2 - 1], CV_LOAD_IMAGE_UNCHANGED);
         vector<double> v2 = extractor.getVector(image2);
-        simularity.push_back(classifier.getDif(v1, v2));
+        simularity[i] = classifier.getDif(v1, v2);
     }
     for (int i = testPairs; i < testPairs * 2; ++i) {
         string humanName1;
@@ -57,7 +57,7 @@ double Tests::outputResultPairsLFW() {
         vector<double> v1 = extractor.getVector(image1);
         Mat image2 = imread(people[humanName2][imageNum2 - 1], CV_LOAD_IMAGE_UNCHANGED);
         vector<double> v2 = extractor.getVector(image2);
-        simularity.push_back(classifier.getDif(v1, v2));
+        simularity[i] = classifier.getDif(v1, v2);
     }
 
     const double maxSimularity = *max_element(simularity.begin(), simularity.end()) + 0.1;

@@ -9,9 +9,9 @@
 #include <ctime>
 
 // x=[0; 5000] -> y=[0.15; 0.08]
-#define LEARNING_RATE_FUNCT_DECREASE_SPEED 5000
+#define LEARNING_RATE_FUNCT_DECREASE_SPEED 1000
 // 16 is equivalent of function first value 0.1
-#define LEARNING_RATE_FUNCT_COEFFICENT_FUNPARAM 10 
+#define LEARNING_RATE_FUNCT_COEFFICENT_FUNPARAM 16 
 #define sqr(x) (x)*(x)
 
 const int FeatureExtractor::LAYER_TYPE[SIZES::LAYERS_COUNT] = { LAYER_INPUT,
@@ -19,11 +19,11 @@ const int FeatureExtractor::LAYER_TYPE[SIZES::LAYERS_COUNT] = { LAYER_INPUT,
                                                LAYER_CONV, LAYER_POOL, 
                                                LAYER_CONV, LAYER_POOL, 
                                                LAYER_CONV, LAYER_POOL,
-                                               LAYER_CONV, LAYER_FULL_CONNECTED};
-const int FeatureExtractor::SIZES::LAYER_EDGE[SIZES::LAYERS_COUNT] = { 78, 76, 38, 36, 18, 16, 8, 6, 3, 1, 1 };
-const int FeatureExtractor::SIZES::LAYER_MAPS[SIZES::LAYERS_COUNT] = { 1, 8, 8, 64, 64, 256, 256, 1024, 1024, 1024, 128 };
-const int FeatureExtractor::SIZES::CONV_MAPS[SIZES::CONV_LAYERS] = { 8, 8, 4, 4, 1, AUTO };
-const int FeatureExtractor::SIZES::CONV_EDGE[SIZES::CONV_LAYERS] = { 3, 3, 3, 3, 3, AUTO };
+                                               LAYER_CONV };
+const int FeatureExtractor::SIZES::LAYER_EDGE[SIZES::LAYERS_COUNT] = { 78, 76, 38, 36, 18, 16, 8, 6, 3, 1};
+const int FeatureExtractor::SIZES::LAYER_MAPS[SIZES::LAYERS_COUNT] = { 1, 4, 4, 16, 16, 64, 64, 128, 128, 128 };
+const int FeatureExtractor::SIZES::CONV_MAPS[SIZES::CONV_LAYERS] = { 4, 4, 4, 2, 1 };
+const int FeatureExtractor::SIZES::CONV_EDGE[SIZES::CONV_LAYERS] = { 3, 3, 3, 3, 3 };
 
 FeatureExtractor::FeatureExtractor() {
     for (int layer = 0; layer < SIZES::LAYERS_COUNT; ++layer) {
@@ -249,9 +249,8 @@ Rect FeatureExtractor::getPointLocalFields(int i, int j,
                 localBottom - localTop + 1);
 }
 
-void FeatureExtractor::backpropagation(Mat &image, vector<double> goal,
-                                       Distance mode) {
-    vector<double> response = getVector(image);
+void FeatureExtractor::backpropagation(vector<double> &v1, vector<double> &v2) {
+    /*vector<double> response = getVector(image);
     if (mode == Distance::Maximize) {
         for (int i = 0; i < goal.size(); ++i) {
             if (LAYER_TYPE[SIZES::LAST_LAYER_NUM] == LAYER_L2_NORM) {
@@ -265,7 +264,7 @@ void FeatureExtractor::backpropagation(Mat &image, vector<double> goal,
                 }
             }
         }
-    }
+    }*/
     
     int convNum = SIZES::CONV_LAYERS - 1;
     for (int layer = SIZES::LAST_LAYER_NUM; layer >= 0; --layer) {
@@ -274,7 +273,7 @@ void FeatureExtractor::backpropagation(Mat &image, vector<double> goal,
        
         if (layer == SIZES::LAST_LAYER_NUM) {
             for (int map = 0; map < layerMaps; ++map) {
-                layersMapsError[layer][map].set(0, 0, response[map] - goal[map]);
+                layersMapsError[layer][map].set(0, 0, 2 * (v1[map] - v2[map]));
             }
             continue;
         }
@@ -460,16 +459,41 @@ void FeatureExtractor::train(TrainMode MODE, int trainInterations) {
             (pi / 2 - atan(weights.getTrainEpoch() / LEARNING_RATE_FUNCT_DECREASE_SPEED)) /
             LEARNING_RATE_FUNCT_COEFFICENT_FUNPARAM;
 
-        Mat image1 = imread(people[humanNum][photoNum1].c_str(), CV_LOAD_IMAGE_UNCHANGED);
-        Mat image2 = imread(people[humanNum][photoNum2].c_str(), CV_LOAD_IMAGE_UNCHANGED);
-        Mat difImage = imread(people[difHumanNum][difPhotoNum].c_str(), CV_LOAD_IMAGE_UNCHANGED);
-        vector<double> goal = getVector(image1);
-        double imagePrevDifMax = classifier.getDif(getVector(image1), getVector(difImage));
-        backpropagation(difImage, goal, Distance::Maximize);
-        double imageDifMax = classifier.getDif(getVector(image1), getVector(difImage));
-        double imagePrevDifMin = classifier.getDif(getVector(image1), getVector(image2));
-        backpropagation(image2, goal, Distance::Minimize);
-        double imageDifMin = classifier.getDif(getVector(image1), getVector(image2));
+        Mat anchor = imread(people[humanNum][photoNum1].c_str(), CV_LOAD_IMAGE_UNCHANGED);
+        Mat positive = imread(people[humanNum][photoNum2].c_str(), CV_LOAD_IMAGE_UNCHANGED);
+        Mat negative = imread(people[difHumanNum][difPhotoNum].c_str(), CV_LOAD_IMAGE_UNCHANGED);
+        vector<double> anc = getVector(anchor);
+        vector<double> pos = getVector(positive);
+        vector<double> neg = getVector(negative);
+        double prevDistAncPos = classifier.getDif(anc, pos);
+        double prevDistAncNeg = classifier.getDif(anc, neg);
+        if (prevDistAncPos >= prevDistAncNeg) {
+            continue;
+        }
+        //double prevLoss = classifier.tripletLoss(anc, pos, neg);
+        backpropagation(neg, pos);
+        backpropagation(pos, anc);
+        backpropagation(anc, neg);
+
+        //anc = getVector(anchor);
+        //pos = getVector(positive);
+        //neg = getVector(negative);
+        //double loss = classifier.tripletLoss(anc, pos, neg);
+
+
+
+        //anchorV = getVector(anchor);
+        //positiveV = getVector(positive);
+        //negativeV = getVector(negative);
+        //double distAncPos = classifier.getDif(anchorV, positiveV);
+        //double distAncNeg = classifier.getDif(anchorV, negativeV);
+
+        //double imagePrevDifMax = classifier.getDif(getVector(image1), getVector(difImage));
+        //backpropagation(positiveV, negativeV);
+        //double imageDifMax = classifier.getDif(getVector(image1), getVector(difImage));
+        //double imagePrevDifMin = classifier.getDif(getVector(image1), getVector(image2));
+        //backpropagation(image2, goal, Distance::Minimize);
+        //double imageDifMin = classifier.getDif(getVector(image1), getVector(image2));
         
 
         //if (imagePrevDifMin < imageDifMin || imagePrevDifMax > imageDifMax) {
@@ -482,8 +506,8 @@ void FeatureExtractor::train(TrainMode MODE, int trainInterations) {
         if (weights.getTrainEpoch() >= finalTrainEpoch) {
             break;
         }
-        if (weights.getTrainEpoch() % 100 == 0) {
-            weights.save(weights.getTrainEpoch() / 100);
+        if (weights.getTrainEpoch() % 1000 == 0) {
+            weights.save(weights.getTrainEpoch() / 1000);
         }
     }
 
