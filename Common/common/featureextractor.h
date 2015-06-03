@@ -1,3 +1,5 @@
+#pragma once
+
 #include <vector>
 #include <cmath>
 #include <stdint.h>
@@ -11,10 +13,10 @@ using namespace cv;
 class FeatureExtractor {
 private:
     struct SIZES {
-        static const int LAYERS_COUNT = 10;
+        static const int LAYERS_COUNT = 8;
         static const int LAYER_EDGE[LAYERS_COUNT];
         static const int LAYER_MAPS[LAYERS_COUNT];
-        static const int CONV_LAYERS = 5;
+        static const int CONV_LAYERS = 4;
         static const int CONV_MAPS[CONV_LAYERS];
         static const int CONV_EDGE[CONV_LAYERS];
         static const int LAST_LAYER_NUM = LAYERS_COUNT - 1;
@@ -108,7 +110,7 @@ private:
     void fullConnected(int layerNum, int convNum);
     void pool(Array2D &prevMap, int layerNum, int mapNum);
     void normL2(int layerNum);
-    void backpropagation(vector<double> &v1, vector<double> &v2);
+    void backpropagation(vector<double> &goal, vector<double> &v, Distance mode);
 public:
     FeatureExtractor();
 

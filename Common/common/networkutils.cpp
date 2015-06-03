@@ -1,4 +1,4 @@
-#include <common\stdafx.h>
+#include <common/stdafx.h>
 #include "networkutils.h"
 #include <dirent.h>
 #include <direct.h>
@@ -14,7 +14,7 @@ const string NetworkUtils::MINE_HQ_IMAGES_FOLDER_PATH = MINE_LQ_FACES_FOLDER_PAT
 const string NetworkUtils::VISUALIZER_FOLDER_PATH = "d:\\X\\FaceSpace\\Datasets\\visualizer\\";
 const string NetworkUtils::TRAIN_MAINER_FOLDER_PATH = MINE_HQ_FACES_FOLDER_PATH;
 const string NetworkUtils::TEST_LFW_FOLDER_PATH = "d:\\X\\FaceSpace\\Datasets\\lfw\\";
-const string NetworkUtils::WEIGHTS_FOLDER_PATH = "d:\\X\\FaceSpace\\Core\\";
+const string NetworkUtils::WEIGHTS_FOLDER_PATH = "d:\\X\\FaceSpace\\Common\\";
 size_t NetworkUtils::prevRequestTime = 0;
 
 void NetworkUtils::removeAllWeights() {

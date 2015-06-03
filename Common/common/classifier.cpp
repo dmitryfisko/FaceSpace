@@ -2,15 +2,69 @@
 #include <common/classifier.h>
 
 #include <assert.h>
+#include <fstream>
 
 #define sqr(x) ((x)*(x))
 
-const double Classifier::MAX_DIST = 1e9;
+const double Classifier::MAXIMUM = 1e9;
 const double Classifier::THRESHOLD = 0.11;
 
-Classifier::Point::Point() {}
-Classifier::Point::Point(vector<double> &coords, __int64 uid, __int64 number)
-    : coords(coords), uid(uid), number(number) {}
+Classifier::Classifier() {
+    ifstream in("../common/profiles.dat");
+    if (!in) {
+        return;
+    }
+
+    int profilesNum;
+    in >> profilesNum;
+    for (int i = 0; i < profilesNum; ++i) {
+        string userName;
+        vector<double> uid;
+        __int64 key;
+        int uidLen;
+
+        getline(in, userName);
+        getline(in, userName);
+        in >> key >> uidLen;
+        uid.reserve(uidLen);
+        for (int j = 0; j < uidLen; ++j) {
+            double item;
+            in >> item;
+            uid.push_back(item);
+        }
+
+        Profile profile(userName, key, uid);
+        profiles.push_back(profile);
+    }
+}
+
+void Classifier::saveProfiles() {
+    ofstream out("../common/profiles.dat");
+    
+    out << profiles.size() << endl;
+    for (int i = 0; i < profiles.size(); ++i) {
+        out << profiles[i].userName << endl
+            << profiles[i].key << endl 
+            << profiles[i].uid.size() << endl;
+        for (int j = 0; j < profiles[i].uid.size(); ++j) {
+            out << profiles[i].uid[j] << ' ';
+        }
+        out << endl;
+    }
+}
+
+void Classifier::addProfile(string path, string userName) {
+    Mat mat = imread(path.c_str());
+    int height = mat.size().height;
+    int width = mat.size().width;
+    assert(width > 0 && width == height);
+
+    vector<double> uid = extractor.getVector(mat);
+    __int64 key = profiles.size() + 1;
+    Classifier::Profile profile(userName, key, uid);
+    profiles.push_back(profile);
+    saveProfiles();
+}
 
 double Classifier::getDif(vector<double> &v1, vector<double> &v2) {
     assert(v1.size() == v2.size());
@@ -26,37 +80,36 @@ double Classifier::tripletLoss(vector<double> &a, vector<double> &p,
     assert(a.size() == p.size() && a.size() == n.size());
     double loss = 0;
     for (int i = 0; i < a.size(); ++i) {
-        loss += max(0, sqr(a[i] - p[i]) - sqr(a[i] - n[i]) + 0.2);
+        loss += max((double)0, sqr(a[i] - p[i]) - sqr(a[i] - n[i]) + 0.2);
     }
     return loss / a.size();
 }
 
-__int64 Classifier::getUID(vector<double> &point) {
-    __int64 minDistUID = -1;
-    __int64 minDistNumber = -1;
-    double minDist = MAX_DIST;
-    for (int i = 0; i < points.size(); ++i) {
-        double dist = getDif(point, points[i].coords);
-        if (dist < minDist) {
-            minDist = dist;
-            minDistUID = points[i].uid;
-            minDistNumber = points[i].number;
+vector<Classifier::Profile> Classifier::getProfiles(cv::Mat &image, vector<cv::Rect> &rects) {
+    vector<Classifier::Profile> ans;
+    ans.reserve(rects.size());
+    for (int i = 0; i < rects.size(); ++i) {
+        Mat roi = image(rects[i]);
+        ans.push_back(getProfile(roi));
+    }
+    return ans;
+}
+
+Classifier::Profile Classifier::getProfile(cv::Mat &image) {
+    assert(profiles.size() > 0);
+
+    vector<double> v = extractor.getVector(image);
+    double minLoss = MAXIMUM;
+    int minInd = -1;
+    for (int i = 0; i < profiles.size(); ++i) {
+        double loss = getDif(v, extractor.getVector(image));
+        if (loss < minLoss) {
+            minLoss = loss;
+            minInd = i;
         }
     }
 
-    __int64 uid;
-    if (minDist > THRESHOLD) {
-        uid = ++prevUniqueUID;
-    } else {
-        uid = minDistUID;
-    }
-    //lastMinDist = minDist;
-    //lastNearestNumber = minDistNumber;
-    cout << "    minDist: " << minDist << "   UID: " << uid 
-        << "   minDistUID: " << uid << "    number: " << ++number 
-        << "   minDistNumber: " << minDistNumber << endl;
-    points.push_back( Point(point, uid, number) );
-    return uid;
+    return profiles[minInd];
 }
 
 bool Classifier::isSame(vector<double> &v1, vector<double> &v2) {
@@ -67,19 +120,3 @@ bool Classifier::isSame(vector<double> &v1, vector<double> &v2) {
         return false;
     }
 }
-
-/*double Classifier::getLastMinDist() {
-    if (lastMinDist != MAX_DIST)  {
-        return lastMinDist;
-    } else {
-        return 0;
-    }
-}
-
-__int64 Classifier::getNearestNumber() {
-    if (lastNearestNumber == -1) {
-        return 1;
-    } else {
-        return lastNearestNumber;
-    }
-}*/

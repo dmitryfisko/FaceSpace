@@ -51,7 +51,8 @@ int ImageMiner::loadUserPhotos(string userID,
         }
 
         string hqImageUrl = photo["src_big"].GetString();
-        string hqImagePath = NetworkUtils::getHQImagePath(userID + "_" + int64ToString(i + 1) + "_hq");
+        string hqImagePath = NetworkUtils::getHQImagePath(
+            userID + "_" + int64ToString(i + 1) + "_hq");
 
         if (!NetworkUtils::isFileExist(hqImagePath)) {
             NetworkUtils::downloadImageAndCache(hqImageUrl, hqImagePath);

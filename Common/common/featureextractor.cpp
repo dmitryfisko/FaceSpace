@@ -1,6 +1,5 @@
 #include "stdafx.h"
-#include "featureextractor.h"
-#include <common/classifier.h>
+#include <common/featureextractor.h>
 
 #include "networkutils.h"
 
@@ -18,12 +17,11 @@ const int FeatureExtractor::LAYER_TYPE[SIZES::LAYERS_COUNT] = { LAYER_INPUT,
                                                LAYER_CONV, LAYER_POOL, 
                                                LAYER_CONV, LAYER_POOL, 
                                                LAYER_CONV, LAYER_POOL, 
-                                               LAYER_CONV, LAYER_POOL,
                                                LAYER_CONV };
-const int FeatureExtractor::SIZES::LAYER_EDGE[SIZES::LAYERS_COUNT] = { 78, 76, 38, 36, 18, 16, 8, 6, 3, 1};
-const int FeatureExtractor::SIZES::LAYER_MAPS[SIZES::LAYERS_COUNT] = { 1, 4, 4, 16, 16, 64, 64, 128, 128, 128 };
-const int FeatureExtractor::SIZES::CONV_MAPS[SIZES::CONV_LAYERS] = { 4, 4, 4, 2, 1 };
-const int FeatureExtractor::SIZES::CONV_EDGE[SIZES::CONV_LAYERS] = { 3, 3, 3, 3, 3 };
+const int FeatureExtractor::SIZES::LAYER_EDGE[SIZES::LAYERS_COUNT] = { 68, 64, 32, 28, 14, 10, 5, 1};
+const int FeatureExtractor::SIZES::LAYER_MAPS[SIZES::LAYERS_COUNT] = { 1, 8, 8, 32, 32, 128, 128, 128 };
+const int FeatureExtractor::SIZES::CONV_MAPS[SIZES::CONV_LAYERS] = { 8, 4, 4, 1 };
+const int FeatureExtractor::SIZES::CONV_EDGE[SIZES::CONV_LAYERS] = { 5, 5, 5, 5 };
 
 FeatureExtractor::FeatureExtractor() {
     for (int layer = 0; layer < SIZES::LAYERS_COUNT; ++layer) {
@@ -249,31 +247,30 @@ Rect FeatureExtractor::getPointLocalFields(int i, int j,
                 localBottom - localTop + 1);
 }
 
-void FeatureExtractor::backpropagation(vector<double> &v1, vector<double> &v2) {
-    /*vector<double> response = getVector(image);
-    if (mode == Distance::Maximize) {
-        for (int i = 0; i < goal.size(); ++i) {
-            if (LAYER_TYPE[SIZES::LAST_LAYER_NUM] == LAYER_L2_NORM) {
-                goal[i] = 1 - goal[i];
-            } else {
-                double randSign = (double)rand() / RAND_MAX * 2 - 1;
-                if (randSign >= 0) {
-                    goal[i] = 1 - goal[i];
-                } else {
-                    goal[i] = -1 - goal[i];
-                }
-            }
-        }
-    }*/
-    
+void FeatureExtractor::backpropagation(vector<double> &goal, vector<double> &v, Distance mode) {   
     int convNum = SIZES::CONV_LAYERS - 1;
     for (int layer = SIZES::LAST_LAYER_NUM; layer >= 0; --layer) {
         int layerMaps = SIZES::LAYER_MAPS[layer];
         int layerEdge = SIZES::LAYER_EDGE[layer];
        
         if (layer == SIZES::LAST_LAYER_NUM) {
+            if (mode == Distance::Maximize) {
+                for (int i = 0; i < goal.size(); ++i) {
+                    if (LAYER_TYPE[SIZES::LAST_LAYER_NUM] == LAYER_L2_NORM) {
+                        goal[i] = 1 - goal[i];
+                    } else {
+                        double randSign = (double)rand() / RAND_MAX * 2 - 1; 
+                        if (randSign >= 0) {
+                            goal[i] = 1 - goal[i];
+                        } else {
+                            goal[i] = -1 - goal[i];
+                        }
+                    }
+                }
+            }
+
             for (int map = 0; map < layerMaps; ++map) {
-                layersMapsError[layer][map].set(0, 0, 2 * (v1[map] - v2[map]));
+                layersMapsError[layer][map].set(0, 0, v[map] - goal[map]);
             }
             continue;
         }
@@ -385,7 +382,6 @@ void FeatureExtractor::backpropagation(vector<double> &v1, vector<double> &v2) {
                                 }
                             }
                             double delta = (-1) * learningRate *
-                                //prevMap.at(i, j) *
                                 errorMap.at(i, j) *
                                 derivMap.at(i, j);
                             weight.addBias(delta);
@@ -438,7 +434,6 @@ void FeatureExtractor::train(TrainMode MODE, int trainInterations) {
 
     vector< vector<string> > people = NetworkUtils::loadTrainSetMiner();
 
-    Classifier classifier;
     int finalTrainEpoch = weights.getTrainEpoch() + trainInterations;
     //int maxTrainSetSize = trainInterations;
     double pi = 4. * std::atan(1.);
@@ -462,52 +457,28 @@ void FeatureExtractor::train(TrainMode MODE, int trainInterations) {
         Mat anchor = imread(people[humanNum][photoNum1].c_str(), CV_LOAD_IMAGE_UNCHANGED);
         Mat positive = imread(people[humanNum][photoNum2].c_str(), CV_LOAD_IMAGE_UNCHANGED);
         Mat negative = imread(people[difHumanNum][difPhotoNum].c_str(), CV_LOAD_IMAGE_UNCHANGED);
-        vector<double> anc = getVector(anchor);
-        vector<double> pos = getVector(positive);
-        vector<double> neg = getVector(negative);
-        double prevDistAncPos = classifier.getDif(anc, pos);
-        double prevDistAncNeg = classifier.getDif(anc, neg);
-        if (prevDistAncPos >= prevDistAncNeg) {
-            continue;
-        }
-        //double prevLoss = classifier.tripletLoss(anc, pos, neg);
-        backpropagation(neg, pos);
-        backpropagation(pos, anc);
-        backpropagation(anc, neg);
+        vector<double> anc;
+        vector<double> pos;
+        vector<double> neg;
+       
+        anc = getVector(anchor);
+        neg = getVector(negative);
+        //double imagePrevDifMax = Classifier::getDif(anc, neg);
+        backpropagation(anc, neg, Distance::Maximize);
+        //double imageDifMax = Classifier::getDif(getVector(anchor), getVector(negative));
 
-        //anc = getVector(anchor);
-        //pos = getVector(positive);
-        //neg = getVector(negative);
-        //double loss = classifier.tripletLoss(anc, pos, neg);
-
-
-
-        //anchorV = getVector(anchor);
-        //positiveV = getVector(positive);
-        //negativeV = getVector(negative);
-        //double distAncPos = classifier.getDif(anchorV, positiveV);
-        //double distAncNeg = classifier.getDif(anchorV, negativeV);
-
-        //double imagePrevDifMax = classifier.getDif(getVector(image1), getVector(difImage));
-        //backpropagation(positiveV, negativeV);
-        //double imageDifMax = classifier.getDif(getVector(image1), getVector(difImage));
-        //double imagePrevDifMin = classifier.getDif(getVector(image1), getVector(image2));
-        //backpropagation(image2, goal, Distance::Minimize);
-        //double imageDifMin = classifier.getDif(getVector(image1), getVector(image2));
-        
-
-        //if (imagePrevDifMin < imageDifMin || imagePrevDifMax > imageDifMax) {
-        //    if ((imagePrevDifMin - imageDifMin < -0.01) || (imagePrevDifMax - imageDifMax > 0.01)) {
-        //        cout << trainEpoch << endl;
-        //    }
-        //}
-
+        anc = getVector(anchor);
+        pos = getVector(positive);
+        //double imagePrevDifMin = Classifier::getDif(anc, pos);
+        backpropagation(anc, pos, Distance::Minimize);
+        //double imageDifMin = Classifier::getDif(getVector(anchor), getVector(positive));
+       
         weights.incTrainEpoch();
         if (weights.getTrainEpoch() >= finalTrainEpoch) {
             break;
         }
-        if (weights.getTrainEpoch() % 1000 == 0) {
-            weights.save(weights.getTrainEpoch() / 1000);
+        if (weights.getTrainEpoch() % 100 == 0) {
+            weights.save(weights.getTrainEpoch() / 100);
         }
     }
 

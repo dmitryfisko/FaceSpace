@@ -18,9 +18,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="tests.cpp">
-      <Filter>Файлы исходного кода</Filter>
-    </ClCompile>
     <ClCompile Include="..\Common\common\array2d.cpp">
       <Filter>Файлы исходного кода\extractor</Filter>
     </ClCompile>
@@ -48,11 +45,11 @@
     <ClCompile Include="mainCore.cpp">
       <Filter>Файлы исходного кода</Filter>
     </ClCompile>
+    <ClCompile Include="..\Common\common\tests.cpp">
+      <Filter>Файлы исходного кода</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="tests.h">
-      <Filter>Заголовочные файлы</Filter>
-    </ClInclude>
     <ClInclude Include="..\Common\common\classifier.h">
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
@@ -68,11 +65,8 @@
     <ClInclude Include="..\Common\common\networkutils.h">
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="out.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="weights.dat" />
+    <ClInclude Include="..\Common\common\tests.h">
+      <Filter>Заголовочные файлы</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

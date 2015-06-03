@@ -3,7 +3,7 @@
 
 #include <fstream>
 #include <time.h>
-#include <../Core/tests.h>
+#include <common/tests.h>
 
 FeatureExtractor::Weights::Weights() {
     int convNum = 0;
@@ -41,7 +41,7 @@ FeatureExtractor::Weights::Weights() {
         }
     }
 
-    ifstream in("weights.dat");
+    ifstream in("../common/weights.dat");
     if (!in) {
         return;
     }
@@ -90,7 +90,7 @@ void FeatureExtractor::Weights::save() {
 }
 
 void FeatureExtractor::Weights::save(int num) {
-    string s = "weights";
+    string s = "../common/weights";
     if (num >= 0) {
         save();
         s += " " + to_string(num) + " " 

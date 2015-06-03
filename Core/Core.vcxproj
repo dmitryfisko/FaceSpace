@@ -16,25 +16,19 @@
     <ClCompile Include="..\Common\common\facedetector.cpp" />
     <ClCompile Include="..\Common\common\featureextractor.cpp" />
     <ClCompile Include="..\Common\common\networkutils.cpp" />
+    <ClCompile Include="..\Common\common\tests.cpp" />
     <ClCompile Include="..\Common\common\visualizer.cpp" />
     <ClCompile Include="..\Common\common\weights.cpp" />
     <ClCompile Include="imageminer.cpp" />
     <ClCompile Include="mainCore.cpp" />
-    <ClCompile Include="tests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Common\common\classifier.h" />
     <ClInclude Include="..\Common\common\facedetector.h" />
     <ClInclude Include="..\Common\common\featureextractor.h" />
     <ClInclude Include="..\Common\common\networkutils.h" />
+    <ClInclude Include="..\Common\common\tests.h" />
     <ClInclude Include="imageminer.h" />
-    <ClInclude Include="tests.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="out.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="weights.dat" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{D9D1DC8D-6DBD-4AE9-8E2D-4E7A953F8942}</ProjectGuid>
@@ -84,7 +78,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>CURL_STATICLIB;WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\OpenCV\build\include;D:\X\FaceSpace\Libs\Dirent\include\;D:\X\FaceSpace\Common\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\OpenCV\build\include;D:\X\FaceSpace\Libs\Dirent\include\;D:\X\FaceSpace\Common\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

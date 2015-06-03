@@ -42,9 +42,8 @@ DWORD WINAPI WebCam::readerThreadProc(HANDLE handle) {
     //capture = cvCaptureFromFile("http:\\192.168.43.1");
     
     for (; isRun;) {
-        IplImage *tempFrame = cvQueryFrame(capture);
-        if (tempFrame && (tempFrame->height > 0 && tempFrame->width > 0)) {
-            frame = tempFrame;
+        frame = cvQueryFrame(capture);
+        if (frame && (frame->height > 0 && frame->width > 0)) {
             IplImage2Bmp(frame, bitmap);
             HWND hwnd = GetActiveWindow();
             RECT rect;
@@ -53,7 +52,7 @@ DWORD WINAPI WebCam::readerThreadProc(HANDLE handle) {
             Sleep(50);
         } 
     }
-    cvReleaseCapture(&capture);
+    //cvReleaseCapture(&capture);
     TerminateThread(readerThread, 0);
     return 0;
 }

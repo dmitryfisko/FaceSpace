@@ -2,14 +2,22 @@
 //
 
 #include <common/stdafx.h>
+#include <common/facedetector.h>
+#include <common/classifier.h>
 #include "resource.h"
 #include "webcam.h"
-#include <common/facedetector.h>
+
 #include <ctime>
+#include <locale>
+#include <codecvt>
 
 #define MAX_LOADSTRING 100
 #define PHOTO_BUTTON_RADIUS 41
 #define CIRCLE_ANIMATION_TIME 1250
+
+#define FRAME_BORDER_WIDTH 3
+#define TEXT_SIZE 25
+#define POLYGON_TRIANGLE_HEIGHT 4
 
 #define sqr(x) (x)*(x)
 
@@ -19,6 +27,7 @@ TCHAR szTitle[MAX_LOADSTRING];					// “екст строки заголовка
 TCHAR szWindowClass[MAX_LOADSTRING];			// им€ класса главного окна
 WebCam webcam;
 vector<Rect> faces;
+vector<Classifier::Profile> profiles;
 HDC memHDC;
 HDC memHDC2;
 HGDIOBJ memBitmap2;
@@ -131,6 +140,19 @@ void getButtonTakePhotoXY(int &x, int &y) {
     y = clientHeight - PHOTO_BUTTON_RADIUS * 2 - 8;
 }
 
+
+std::wstring s2ws(const std::string& s)
+{
+    int len;
+    int slength = (int)s.length() + 1;
+    len = MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, 0, 0);
+    wchar_t* buf = new wchar_t[len];
+    MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, buf, len);
+    std::wstring r(buf);
+    delete[] buf;
+    return r;
+}
+
 void displayWebCamFrame(HDC &hdc, bool isJustMemorizeInMem2) {
     HBITMAP hBitmap;
     hBitmap = webcam.getBitmap();
@@ -184,11 +206,47 @@ void displayWebCamFrame(HDC &hdc, bool isJustMemorizeInMem2) {
 
     double scale = (double)dWidth / bitmap.bmWidth;
     //HPEN linePen = CreatePen(PS_SOLID, 5, RGB(238, 255, 65));
-    HPEN linePen = CreatePen(PS_SOLID, 5, RGB(255, 255, 255));
+    HPEN linePen = CreatePen(PS_SOLID, FRAME_BORDER_WIDTH, RGB(255, 255, 255));
     HPEN oldLinePen = (HPEN)SelectObject(memHDC2, linePen);
     for (int i = 0; i < faces.size(); ++i) {
         Rect scaledFace = FaceDetector::scaleRect(faces[i], scale);
         Rect face = FaceDetector::scaleRectSize(scaledFace, 0.7, INT_MAX, INT_MAX);
+        std::wstring wUserName = s2ws(profiles[i].userName);
+        int labelOffset = POLYGON_TRIANGLE_HEIGHT + FRAME_BORDER_WIDTH;
+        int labelHeight = min((double)40, face.y * 0.18);
+
+        int fontSize = max((double)1, (labelHeight - labelOffset) * 0.85);
+        int rectOffset = wUserName.length() * fontSize / 3.2;
+
+        Rectangle(memHDC2, 
+                  dX + face.x + face.width / 2 - rectOffset,
+                  dY + face.y - labelHeight,
+                  dX + face.x + face.width / 2 + rectOffset,
+                  dY + face.y - labelOffset);
+        SetTextAlign(memHDC2, TA_CENTER);
+
+        
+        int textOffset = (labelHeight - labelOffset) * 0.9 + labelOffset;
+        
+
+        HFONT hFont = CreateFont(fontSize, 0, 0, 0, FW_BOLD,
+                                 0, 0, 0, 0, 0, 0, 2, 0, L"SYSTEM_FIXED_FONT");
+        HFONT hTmp = (HFONT)SelectObject(memHDC2, hFont);
+        SetTextColor(memHDC2, RGB(255, 152, 0));
+        TextOut(memHDC2, 
+                dX + face.x + face.width / 2, 
+                dY + face.y - textOffset,
+                wUserName.c_str(), wUserName.length());
+        DeleteObject(SelectObject(memHDC2, hTmp));
+
+        POINT points[3];
+        points[0].x = dX + face.x + face.width / 2;
+        points[0].y = dY + face.y - FRAME_BORDER_WIDTH;
+        points[1].x = dX + face.x + face.width / 2 - 5;
+        points[1].y = dY + face.y - (POLYGON_TRIANGLE_HEIGHT + FRAME_BORDER_WIDTH);
+        points[2].x = dX + face.x + face.width / 2 + 5;
+        points[2].y = dY + face.y - (POLYGON_TRIANGLE_HEIGHT + FRAME_BORDER_WIDTH);
+        Polygon(memHDC2, points, 3);
         MoveToEx(memHDC2, dX + face.x, dY + face.y, NULL);
         LineTo(memHDC2, dX + face.x + face.width, dY + face.y);
         LineTo(memHDC2, dX + face.x + face.width, dY + face.y + face.height);
@@ -357,7 +415,11 @@ DWORD WINAPI loadingThreadProc(HANDLE handle) {
 DWORD WINAPI facedetectionThreadProc(HANDLE handle) {
     Sleep(50);
     FaceDetector detector;
-    faces = detector.detect((Mat)webcam.frame, FaceDetector::FindAllFaces);
+    Classifier classifier;
+    Mat frame = webcam.frame;
+    faces = detector.detect(frame, FaceDetector::FindAllFaces);
+    profiles = classifier.getProfiles(frame, faces);
+
     isLoadingRunning = false;
     Sleep(1000);
     TerminateThread(facedetectionThread, 0);
