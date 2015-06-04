@@ -91,6 +91,8 @@ vector<Classifier::Profile> Classifier::getProfiles(cv::Mat &image, vector<cv::R
     for (int i = 0; i < rects.size(); ++i) {
         Mat roi = image(rects[i]);
         ans.push_back(getProfile(roi));
+        //imshow("smt", roi);
+        //cvWaitKey(5000);
     }
     return ans;
 }
@@ -102,7 +104,7 @@ Classifier::Profile Classifier::getProfile(cv::Mat &image) {
     double minLoss = MAXIMUM;
     int minInd = -1;
     for (int i = 0; i < profiles.size(); ++i) {
-        double loss = getDif(v, extractor.getVector(image));
+        double loss = getDif(v, profiles[i].uid);
         if (loss < minLoss) {
             minLoss = loss;
             minInd = i;

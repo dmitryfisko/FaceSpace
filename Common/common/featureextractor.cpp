@@ -8,7 +8,7 @@
 #include <ctime>
 
 // x=[0; 5000] -> y=[0.15; 0.08]
-#define LEARNING_RATE_FUNCT_DECREASE_SPEED 1000
+#define LEARNING_RATE_FUNCT_DECREASE_SPEED 10000
 // 16 is equivalent of function first value 0.1
 #define LEARNING_RATE_FUNCT_COEFFICENT_FUNPARAM 16 
 #define sqr(x) (x)*(x)
@@ -456,15 +456,15 @@ void FeatureExtractor::train(TrainMode MODE, int trainInterations) {
 
         Mat anchor = imread(people[humanNum][photoNum1].c_str(), CV_LOAD_IMAGE_UNCHANGED);
         Mat positive = imread(people[humanNum][photoNum2].c_str(), CV_LOAD_IMAGE_UNCHANGED);
-        Mat negative = imread(people[difHumanNum][difPhotoNum].c_str(), CV_LOAD_IMAGE_UNCHANGED);
+        //Mat negative = imread(people[difHumanNum][difPhotoNum].c_str(), CV_LOAD_IMAGE_UNCHANGED);
         vector<double> anc;
         vector<double> pos;
-        vector<double> neg;
+        //vector<double> neg;
        
-        anc = getVector(anchor);
-        neg = getVector(negative);
+        //anc = getVector(anchor);
+        //neg = getVector(negative);
         //double imagePrevDifMax = Classifier::getDif(anc, neg);
-        backpropagation(anc, neg, Distance::Maximize);
+        //backpropagation(anc, neg, Distance::Maximize);
         //double imageDifMax = Classifier::getDif(getVector(anchor), getVector(negative));
 
         anc = getVector(anchor);

@@ -213,7 +213,7 @@ void displayWebCamFrame(HDC &hdc, bool isJustMemorizeInMem2) {
         Rect face = FaceDetector::scaleRectSize(scaledFace, 0.7, INT_MAX, INT_MAX);
         std::wstring wUserName = s2ws(profiles[i].userName);
         int labelOffset = POLYGON_TRIANGLE_HEIGHT + FRAME_BORDER_WIDTH;
-        int labelHeight = min((double)40, face.y * 0.18);
+        int labelHeight = min((double)40, face.height * 0.18);
 
         int fontSize = max((double)1, (labelHeight - labelOffset) * 0.85);
         int rectOffset = wUserName.length() * fontSize / 3.2;
